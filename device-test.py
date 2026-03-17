@@ -138,7 +138,7 @@ def record_microphone_to_wav(args: argparse.Namespace) -> Path:
     )
     sd.wait()
 
-    mono = recording[:, 0] if args.channels > 1 else recording.ravel()
+    mono = recording.mean(axis=1) if args.channels > 1 else recording.ravel()
     pcm = np.clip(mono, -1.0, 1.0)
     pcm = (pcm * np.iinfo(np.int16).max).astype(np.int16)
 
