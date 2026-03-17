@@ -2,18 +2,25 @@
 
 `sounddevice` でマイク音声を録音し、そのまま `basic-pitch` に流して MIDI/CSV を出力できます。
 
+## 前提
+
+- Python 3.11+
+- `uv` がインストール済み
+
 ## 使い方
 
 ### 1) 既存音声ファイルを解析
 
+任意の音声ファイル（wav/mp3/flac など）を指定します。
+
 ```bash
-uv run python main.py music/canon-normal.wav --output-dir outputs
+uv run python device-test.py path/to/input.wav --output-dir outputs
 ```
 
 ### 2) マイク録音してそのまま解析
 
 ```bash
-uv run python main.py --record-seconds 10 --output-dir outputs
+uv run python device-test.py --record-seconds 10 --output-dir outputs
 ```
 
 録音したWAVはテスト用として、デフォルトで `test_recordings/` に保存されます。
@@ -22,21 +29,13 @@ uv run python main.py --record-seconds 10 --output-dir outputs
 ### 3) 入力デバイス一覧を確認
 
 ```bash
-uv run python main.py --list-devices
+uv run python device-test.py --list-devices
 ```
 
 必要に応じて `--device`（名前またはインデックス）、`--sample-rate`、`--channels` を指定できます。
 
-## テスト用コマンド
-
-`pyproject.toml` にコマンドを登録済みです。
+### 4) ヘルプ表示
 
 ```bash
-uv run megalo-audio-test --record-seconds 10 --output-dir outputs
-```
-
-ヘルプ表示:
-
-```bash
-uv run megalo-audio-test --help
+uv run python device-test.py --help
 ```
