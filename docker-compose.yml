@@ -5,3 +5,6 @@ services:
     volumes:
       - .:/app  # カレントディレクトリをコンテナの/appに同期
     tty: true   # ターミナルでの操作を可能にする
+    environment:
+      - TF_CPP_MIN_LOG_LEVEL=3
+      - PYTHONWARNINGS=ignore

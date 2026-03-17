@@ -14,3 +14,4 @@ output/
 *.mid
 *.csv
 .env
+input/
