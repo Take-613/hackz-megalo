@@ -1,0 +1,7 @@
+services:
+  audio-env:
+    build: .
+    container_name: guitar_game_audio
+    volumes:
+      - .:/app  # カレントディレクトリをコンテナの/appに同期
+    tty: true   # ターミナルでの操作を可能にする
