@@ -1,0 +1,8 @@
+{
+  "C Major": "print('🎸 ギタープログラミング開始！')",
+  "G Power": "for i in range(3):",
+  "D Single": "    print(f'Rock! {i}')",
+  "A Minor": "def play_music():",
+  "E Power": "    pass",
+  "C Single": "play_music()"
+}
