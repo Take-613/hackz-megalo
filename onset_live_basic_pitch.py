@@ -28,6 +28,7 @@ class AppConfig:
     monitor_input: bool = True
     monitor_gain: float = 1.0
     show_input_devices_on_start: bool = True
+    quiet: bool = False
 
     capture_seconds: float = 1.0
     detect_window_seconds: float = 2.0
@@ -93,6 +94,7 @@ class BasicPitchWorker(threading.Thread):
         maximum_frequency: float | None,
         midi_tempo: float,
         on_result: ResultCallback | None = None,
+        quiet: bool = False,
     ) -> None:
         super().__init__(daemon=True)
         self.task_queue = task_queue
@@ -108,6 +110,7 @@ class BasicPitchWorker(threading.Thread):
         self.maximum_frequency = maximum_frequency
         self.midi_tempo = midi_tempo
         self.on_result = on_result
+        self.quiet = quiet
 
     def run(self) -> None:
         while True:
@@ -121,7 +124,8 @@ class BasicPitchWorker(threading.Thread):
                 if self.on_result is not None:
                     self.on_result(result)
             except Exception as error:
-                print(f"[Worker] analyze failed: {error}")
+                if not self.quiet:
+                    print(f"[Worker] analyze failed: {error}")
             finally:
                 self.task_queue.task_done()
 
@@ -146,9 +150,10 @@ class BasicPitchWorker(threading.Thread):
         midi_data.write(str(midi_path))
         save_note_events(note_events, csv_path)
 
-        print(
-            f"[Worker] saved: {midi_path.name}, {csv_path.name} | notes={len(note_events)}"
-        )
+        if not self.quiet:
+            print(
+                f"[Worker] saved: {midi_path.name}, {csv_path.name} | notes={len(note_events)}"
+            )
 
         try:
             wav_path.unlink(missing_ok=True)
@@ -318,7 +323,8 @@ class AttackStrokeRecognizer:
         self._stop_event = threading.Event()
 
         onnx_model_path = build_icassp_2022_model_path(FilenameSuffix.onnx)
-        print(f"Loading basic-pitch model once: {onnx_model_path}")
+        if not self.config.quiet:
+            print(f"Loading basic-pitch model once: {onnx_model_path}")
         self._model = Model(onnx_model_path)
 
         self._task_queue: "queue.Queue[SegmentTask | None]" = queue.Queue(maxsize=16)
@@ -379,6 +385,7 @@ class AttackStrokeRecognizer:
             maximum_frequency=self.config.bp_maximum_frequency,
             midi_tempo=self.config.bp_midi_tempo,
             on_result=self.on_result,
+            quiet=self.config.quiet,
         )
 
     def start(self) -> None:
@@ -393,15 +400,16 @@ class AttackStrokeRecognizer:
             self._task_queue = queue.Queue(maxsize=16)
             self._worker = self._create_worker()
 
-        print(
-            f"Input device={self._selected_device}, sr={self.config.sample_rate}, channels={FIXED_INPUT_CHANNELS}, blocksize={self.config.blocksize}"
-        )
-        print(f"Output device={self._selected_output_device}")
-        if self.config.monitor_input:
+        if not self.config.quiet:
             print(
-                f"Input monitor=ON, output_device={self._selected_output_device}, gain={self.config.monitor_gain:.2f}"
+                f"Input device={self._selected_device}, sr={self.config.sample_rate}, channels={FIXED_INPUT_CHANNELS}, blocksize={self.config.blocksize}"
             )
-        print("Model is ready. Start listening...")
+            print(f"Output device={self._selected_output_device}")
+            if self.config.monitor_input:
+                print(
+                    f"Input monitor=ON, output_device={self._selected_output_device}, gain={self.config.monitor_gain:.2f}"
+                )
+            print("Model is ready. Start listening...")
 
         self._worker.start()
         if self.config.monitor_input:
@@ -442,7 +450,8 @@ class AttackStrokeRecognizer:
 
         self._task_queue.put(None)
         self._worker.join(timeout=10)
-        print("Stopped")
+        if not self.config.quiet:
+            print("Stopped")
 
     def run_forever(self) -> None:
         self.start()
@@ -452,7 +461,8 @@ class AttackStrokeRecognizer:
                 if self._stop_event.is_set():
                     break
         except KeyboardInterrupt:
-            print("\nStopping...")
+            if not self.config.quiet:
+                print("\nStopping...")
         finally:
             self.stop()
 
@@ -467,12 +477,14 @@ class AttackStrokeRecognizer:
     ) -> None:
         del frames, time_info
         if status:
-            print(f"[Audio] {status}")
+            if not self.config.quiet:
+                print(f"[Audio] {status}")
         mono = indata.mean(axis=1) if indata.shape[1] > 1 else indata[:, 0]
         try:
             self._audio_queue.put_nowait(mono.astype(np.float32, copy=True))
         except queue.Full:
-            print("[Audio] queue overflow: input chunk dropped")
+            if not self.config.quiet:
+                print("[Audio] queue overflow: input chunk dropped")
 
     def _audio_output_callback(
         self,
@@ -513,10 +525,11 @@ class AttackStrokeRecognizer:
                 self._noise_floor_db = float(np.median(self._calibration_rms_values))
             else:
                 self._noise_floor_db = chunk_rms_db
-            print(
-                f"[Calib] done: noise_floor={self._noise_floor_db:.1f}dBFS "
-                f"from first {self.config.calibration_seconds:.2f}s"
-            )
+            if not self.config.quiet:
+                print(
+                    f"[Calib] done: noise_floor={self._noise_floor_db:.1f}dBFS "
+                    f"from first {self.config.calibration_seconds:.2f}s"
+                )
 
         if self.config.print_level_stats:
             self._printed_chunks += 1
@@ -579,10 +592,11 @@ class AttackStrokeRecognizer:
                     self._capture_remaining -= len(take)
 
                 attack_sec = attack_sample / self.config.sample_rate
-                print(
-                    f"[Detect] attack at {attack_sec:.3f}s -> capture start | "
-                    f"rms={gate_rms_db:.1f}dBFS floor={self._noise_floor_db:.1f}dBFS"
-                )
+                if not self.config.quiet:
+                    print(
+                        f"[Detect] attack at {attack_sec:.3f}s -> capture start | "
+                        f"rms={gate_rms_db:.1f}dBFS floor={self._noise_floor_db:.1f}dBFS"
+                    )
 
         else:
             take = chunk[: self._capture_remaining]
@@ -603,11 +617,13 @@ class AttackStrokeRecognizer:
 
             try:
                 self._task_queue.put_nowait(task)
-                print(
-                    f"[Queue] segment #{task.index} queued ({self.config.capture_seconds:.2f}s)"
-                )
+                if not self.config.quiet:
+                    print(
+                        f"[Queue] segment #{task.index} queued ({self.config.capture_seconds:.2f}s)"
+                    )
             except queue.Full:
-                print("[Queue] worker queue is full: segment dropped")
+                if not self.config.quiet:
+                    print("[Queue] worker queue is full: segment dropped")
 
             self._capturing = False
             self._capture_remaining = 0
