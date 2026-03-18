@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+import subprocess
 from dataclasses import replace
 
 import sounddevice as sd
@@ -88,6 +90,20 @@ def main() -> None:
 
     print("\n✅ ギタープログラミング終了！")
     print(f"✅ 生成されたスクリプトを `{output_path}` に保存しました。")
+
+    # --- 修正箇所（ここから追加） ---
+    print("\n" + "="*50)
+    print("🚀 引き続き、自動でプログラムを実行します...")
+    try:
+        subprocess.run(
+            [sys.executable, "run_guitar_code.py"],
+            check=True
+        )
+    except FileNotFoundError:
+        print("❌ エラー: `run_guitar_code.py` が見つかりません。同じフォルダに作成してください。")
+    except Exception as e:
+        print(f"❌ 自動実行中にエラーが発生しました: {e}")
+    # --- 修正箇所（ここまで） ---
 
 
 if __name__ == "__main__":
