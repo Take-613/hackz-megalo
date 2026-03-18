@@ -4,12 +4,17 @@ from dataclasses import replace
 
 import sounddevice as sd
 
-from detection_code import analyze_chord_from_csv
+from detection_code import analyze_chord_from_csv, analyze_chord_from_midi_notes
 from onset_live_basic_pitch import CONFIG, AnalysisResult, AttackStrokeRecognizer
 
 
 def _on_result(result: AnalysisResult) -> None:
-    chord_name = analyze_chord_from_csv(result.csv_path)
+    if result.midi_notes:
+        chord_name = analyze_chord_from_midi_notes(result.midi_notes)
+    elif result.csv_path is not None:
+        chord_name = analyze_chord_from_csv(result.csv_path)
+    else:
+        chord_name = "None"
     print(chord_name, flush=True)
 
 
@@ -61,6 +66,7 @@ def main() -> None:
         show_input_devices_on_start=False,
         monitor_input=True,
         output_device=output_device,
+        save_inference_outputs=False,
     )
     recognizer = AttackStrokeRecognizer(config=config, on_result=_on_result)
     recognizer.run_forever()

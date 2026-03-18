@@ -101,6 +101,10 @@ def analyze_chord_from_csv(csv_path: Path) -> str:
     return analyze_chord(midi_notes)
 
 
+def analyze_chord_from_midi_notes(midi_notes: list[int]) -> str:
+    return analyze_chord(midi_notes)
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Detect chord name from basic-pitch CSV (pitch_midi)."
