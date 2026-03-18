@@ -29,6 +29,7 @@ class AppConfig:
     monitor_gain: float = 1.0
     show_input_devices_on_start: bool = True
     quiet: bool = False
+    save_inference_outputs: bool = True
 
     capture_seconds: float = 1.0
     detect_window_seconds: float = 2.0
@@ -71,8 +72,9 @@ class SegmentTask:
 class AnalysisResult:
     index: int
     timestamp: str
-    midi_path: Path
-    csv_path: Path
+    midi_notes: list[int]
+    midi_path: Path | None
+    csv_path: Path | None
     note_count: int
 
 
@@ -95,6 +97,7 @@ class BasicPitchWorker(threading.Thread):
         midi_tempo: float,
         on_result: ResultCallback | None = None,
         quiet: bool = False,
+        save_inference_outputs: bool = True,
     ) -> None:
         super().__init__(daemon=True)
         self.task_queue = task_queue
@@ -111,6 +114,7 @@ class BasicPitchWorker(threading.Thread):
         self.midi_tempo = midi_tempo
         self.on_result = on_result
         self.quiet = quiet
+        self.save_inference_outputs = save_inference_outputs
 
     def run(self) -> None:
         while True:
@@ -145,15 +149,25 @@ class BasicPitchWorker(threading.Thread):
             midi_tempo=self.midi_tempo,
         )
 
-        midi_path = self.output_dir / f"{stem}_basic_pitch.mid"
-        csv_path = self.output_dir / f"{stem}_basic_pitch.csv"
-        midi_data.write(str(midi_path))
-        save_note_events(note_events, csv_path)
+        midi_notes = [
+            int(round(float(event[2])))
+            for event in note_events
+            if len(event) > 2
+        ]
 
-        if not self.quiet:
-            print(
-                f"[Worker] saved: {midi_path.name}, {csv_path.name} | notes={len(note_events)}"
-            )
+        midi_path: Path | None = None
+        csv_path: Path | None = None
+        if self.save_inference_outputs:
+            midi_path = self.output_dir / f"{stem}_basic_pitch.mid"
+            csv_path = self.output_dir / f"{stem}_basic_pitch.csv"
+            midi_data.write(str(midi_path))
+            save_note_events(note_events, csv_path)
+            if not self.quiet:
+                print(
+                    f"[Worker] saved: {midi_path.name}, {csv_path.name} | notes={len(note_events)}"
+                )
+        elif not self.quiet:
+            print(f"[Worker] inferred (no file save) | notes={len(note_events)}")
 
         try:
             wav_path.unlink(missing_ok=True)
@@ -163,6 +177,7 @@ class BasicPitchWorker(threading.Thread):
         return AnalysisResult(
             index=task.index,
             timestamp=task.timestamp,
+            midi_notes=midi_notes,
             midi_path=midi_path,
             csv_path=csv_path,
             note_count=len(note_events),
@@ -386,6 +401,7 @@ class AttackStrokeRecognizer:
             midi_tempo=self.config.bp_midi_tempo,
             on_result=self.on_result,
             quiet=self.config.quiet,
+            save_inference_outputs=self.config.save_inference_outputs,
         )
 
     def start(self) -> None:
