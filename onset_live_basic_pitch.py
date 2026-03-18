@@ -43,7 +43,7 @@ class AppConfig:
     onset_post_avg: int = 5
     onset_wait: int = 3
 
-    min_rms_db: float = -55.0
+    min_rms_db: float = -30.0
     min_rms_rise_db: float = 6.0
     rms_gate_window_seconds: float = 0.05
     calibration_seconds: float = 1.0
@@ -76,6 +76,8 @@ class AnalysisResult:
     midi_path: Path | None
     csv_path: Path | None
     note_count: int
+    rms_dbfs: float
+    peak_dbfs: float
 
 
 ResultCallback = Callable[[AnalysisResult], None]
@@ -136,6 +138,8 @@ class BasicPitchWorker(threading.Thread):
     def _process(self, task: SegmentTask) -> AnalysisResult:
         stem = f"attack_{task.timestamp}_{task.index:06d}"
         wav_path = self.tmp_dir / f"{stem}.wav"
+        segment_rms_db = rms_dbfs(task.audio)
+        segment_peak_db = peak_dbfs(task.audio)
         self._write_wav_mono(wav_path, task.audio, task.sample_rate)
 
         _, midi_data, note_events = predict(
@@ -179,6 +183,8 @@ class BasicPitchWorker(threading.Thread):
             midi_path=midi_path,
             csv_path=csv_path,
             note_count=len(note_events),
+            rms_dbfs=segment_rms_db,
+            peak_dbfs=segment_peak_db,
         )
 
     @staticmethod
@@ -318,6 +324,13 @@ def rms_dbfs(signal: np.ndarray) -> float:
         return -120.0
     rms = float(np.sqrt(np.mean(np.square(signal))))
     return 20.0 * np.log10(max(rms, 1e-8))
+
+
+def peak_dbfs(signal: np.ndarray) -> float:
+    if len(signal) == 0:
+        return -120.0
+    peak = float(np.max(np.abs(signal)))
+    return 20.0 * np.log10(max(peak, 1e-8))
 
 
 class AttackStrokeRecognizer:

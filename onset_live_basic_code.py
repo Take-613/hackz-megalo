@@ -4,11 +4,9 @@ from dataclasses import replace
 
 import sounddevice as sd
 
+from code_generator import GuitarCodeGenerator
 from detection_code import analyze_chord_from_csv, analyze_chord_from_midi_notes
 from onset_live_basic_pitch import CONFIG, AnalysisResult, AttackStrokeRecognizer
-
-
-from code_generator import GuitarCodeGenerator
 
 
 def _list_output_devices() -> list[tuple[int, str]]:
@@ -64,6 +62,10 @@ def main() -> None:
     generator = GuitarCodeGenerator("code_mapping.json")
 
     def _on_result(result: AnalysisResult) -> None:
+        print(
+            f"[Debug] 音量: RMS={result.rms_dbfs:.1f} dBFS / Peak={result.peak_dbfs:.1f} dBFS",
+            flush=True,
+        )
         if result.csv_path is not None:
             chord_name = analyze_chord_from_csv(result.csv_path)
         else:
@@ -74,17 +76,17 @@ def main() -> None:
             generator.receive_chord(chord_name)
 
     recognizer = AttackStrokeRecognizer(config=config, on_result=_on_result)
-    
+
     print("\n🎸 ライブコーディング待機中... ギターを弾いてください！(終了は Ctrl+C)")
     recognizer.run_forever()
 
     final_script = generator.get_final_script()
     output_path = "output_script.py"
-    
+
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(final_script)
-        
-    print(f"\n✅ ギタープログラミング終了！")
+
+    print("\n✅ ギタープログラミング終了！")
     print(f"✅ 生成されたスクリプトを `{output_path}` に保存しました。")
 
 
