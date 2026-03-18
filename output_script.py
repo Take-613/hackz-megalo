@@ -1,6 +1,1 @@
-print('🎸 ギタープログラミング開始！')
-for i in range(3):
-    print(f'Rock! {i}')
-def play_music():
-    pass
-play_music()
+print(1 + 1)
