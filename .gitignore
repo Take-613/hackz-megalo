@@ -15,7 +15,7 @@ output/
 *.csv
 .env
 input/
-.output_script.py
+output_script.py
 
 music/
 
