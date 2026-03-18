@@ -8,14 +8,7 @@ from detection_code import analyze_chord_from_csv, analyze_chord_from_midi_notes
 from onset_live_basic_pitch import CONFIG, AnalysisResult, AttackStrokeRecognizer
 
 
-def _on_result(result: AnalysisResult) -> None:
-    if result.midi_notes:
-        chord_name = analyze_chord_from_midi_notes(result.midi_notes)
-    elif result.csv_path is not None:
-        chord_name = analyze_chord_from_csv(result.csv_path)
-    else:
-        chord_name = "None"
-    print(chord_name, flush=True)
+from code_generator import GuitarCodeGenerator
 
 
 def _list_output_devices() -> list[tuple[int, str]]:
@@ -66,10 +59,33 @@ def main() -> None:
         show_input_devices_on_start=False,
         monitor_input=True,
         output_device=output_device,
-        save_inference_outputs=False,
     )
+
+    generator = GuitarCodeGenerator("code_mapping.json")
+
+    def _on_result(result: AnalysisResult) -> None:
+        if result.csv_path is not None:
+            chord_name = analyze_chord_from_csv(result.csv_path)
+        else:
+            chord_name = analyze_chord_from_midi_notes(result.midi_notes)
+
+        if chord_name and chord_name != "None":
+            print(f"🎵 ギターのコード: {chord_name}", flush=True)
+            generator.receive_chord(chord_name)
+
     recognizer = AttackStrokeRecognizer(config=config, on_result=_on_result)
+    
+    print("\n🎸 ライブコーディング待機中... ギターを弾いてください！(終了は Ctrl+C)")
     recognizer.run_forever()
+
+    final_script = generator.get_final_script()
+    output_path = "output_script.py"
+    
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(final_script)
+        
+    print(f"\n✅ ギタープログラミング終了！")
+    print(f"✅ 生成されたスクリプトを `{output_path}` に保存しました。")
 
 
 if __name__ == "__main__":
