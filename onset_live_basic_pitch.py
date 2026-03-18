@@ -150,9 +150,7 @@ class BasicPitchWorker(threading.Thread):
         )
 
         midi_notes = [
-            int(round(float(event[2])))
-            for event in note_events
-            if len(event) > 2
+            int(round(float(event[2]))) for event in note_events if len(event) > 2
         ]
 
         midi_path: Path | None = None
