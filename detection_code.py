@@ -1,16 +1,23 @@
+from __future__ import annotations
+
+import argparse
+import csv
+from pathlib import Path
+
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
 # 辞書：ルート音からの半音の距離（インターバル）の組み合わせ
 CHORD_DICTIONARY = {
-    (0, 4, 7): "Major",          # ルート, 長3度, 完全5度
-    (0, 3, 7): "Minor",          # ルート, 短3度, 完全5度
-    (0, 7): "Power",             # ルート, 完全5度 (パワーコード)
-    (0, 4, 7, 10): "7th",        # ルート, 長3度, 完全5度, 短7度
+    (0, 4, 7): "Major",  # ルート, 長3度, 完全5度
+    (0, 3, 7): "Minor",  # ルート, 短3度, 完全5度
+    (0, 7): "Power",  # ルート, 完全5度 (パワーコード)
+    (0, 4, 7, 10): "7th",  # ルート, 長3度, 完全5度, 短7度
     (0, 4, 7, 11): "Major 7th",  # ルート, 長3度, 完全5度, 長7度
     (0, 3, 7, 10): "Minor 7th",  # ルート, 短3度, 完全5度, 短7度
-    (0, 5, 7): "sus4",           # ルート, 完全4度, 完全5度
-    (0, 2, 4, 7): "add9",        # ルート, 長2度(9th), 長3度, 完全5度
+    (0, 5, 7): "sus4",  # ルート, 完全4度, 完全5度
+    (0, 2, 4, 7): "add9",  # ルート, 長2度(9th), 長3度, 完全5度
 }
+
 
 def analyze_chord(midi_notes: list[int]) -> str:
     """
@@ -53,21 +60,64 @@ def analyze_chord(midi_notes: list[int]) -> str:
 
     return f"{root_name} {chord_type}"
 
+
+def extract_pitch_midi_from_csv(csv_path: Path) -> list[int]:
+    """
+    basic-pitch の CSV から pitch_midi 列を抽出して返す
+    """
+    if not csv_path.exists() or not csv_path.is_file():
+        raise FileNotFoundError(f"CSV not found: {csv_path}")
+
+    midi_notes: list[int] = []
+    with csv_path.open("r", encoding="utf-8", newline="") as csv_file:
+        reader = csv.reader(csv_file)
+        header = next(reader, None)
+        if not header:
+            return midi_notes
+
+        try:
+            pitch_index = header.index("pitch_midi")
+        except ValueError as error:
+            raise ValueError(
+                f"'pitch_midi' column not found in CSV: {csv_path}"
+            ) from error
+
+        for row in reader:
+            if len(row) <= pitch_index:
+                continue
+            pitch_text = row[pitch_index].strip()
+            if not pitch_text:
+                continue
+            try:
+                midi_notes.append(int(float(pitch_text)))
+            except ValueError:
+                continue
+
+    return midi_notes
+
+
+def analyze_chord_from_csv(csv_path: Path) -> str:
+    midi_notes = extract_pitch_midi_from_csv(csv_path)
+    return analyze_chord(midi_notes)
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Detect chord name from basic-pitch CSV (pitch_midi)."
+    )
+    parser.add_argument("csv_path", type=Path, help="Path to basic-pitch CSV file")
+    return parser
+
+
+def main() -> None:
+    parser = _build_parser()
+    args = parser.parse_args()
+    chord_name = analyze_chord_from_csv(args.csv_path)
+    print(chord_name)
+
+
 # ==========================================
 # 🧪 動作テスト
 # ==========================================
 if __name__ == "__main__":
-    print("▼ テスト: Cメジャー (ド・ミ・ソ)")
-    print(f"入力: [60, 64, 67] -> 出力: {analyze_chord([60, 64, 67])}\n")
-
-    print("▼ テスト: Cメジャー (オクターブ違いが混ざった実際のギターの押さえ方)")
-    print(f"入力: [48, 52, 55, 60, 64] -> 出力: {analyze_chord([48, 52, 55, 60, 64])}\n")
-
-    print("▼ テスト: Gパワーコード (ソ・レ)")
-    print(f"入力: [43, 50, 55] -> 出力: {analyze_chord([43, 50, 55])}\n")
-
-    print("▼ テスト: 単音のD (レ)")
-    print(f"入力: [62] -> 出力: {analyze_chord([62])}\n")
-    
-    print("▼ テスト: 辞書にない適当なノイズの塊")
-    print(f"入力: [60, 61, 62] -> 出力: {analyze_chord([60, 61, 62])}\n")
+    main()

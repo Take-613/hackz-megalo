@@ -54,6 +54,24 @@ uv run python device-test.py --help
 uv run python onset_live_basic_pitch.py
 ```
 
+## リアルタイムで「コード名だけ」を出力する
+
+`onset_live_basic_code.py` は以下を自動で連携します。
+
+- ギター入力を `onset_live_basic_pitch.py` で取り込み
+- 解析結果CSVの `pitch_midi` を `detection_code.py` で分類
+- 標準出力にはコード名のみ（例: `E Major`）を表示
+
+```bash
+uv run python onset_live_basic_code.py
+```
+
+## 既存CSVからコード判定だけ実行する
+
+```bash
+uv run python detection_code.py outputs/xxx_basic_pitch.csv
+```
+
 他プログラムから組み込む場合:
 
 ```python
