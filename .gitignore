@@ -17,3 +17,5 @@ output/
 input/
 
 music/
+
+.DS_Store
