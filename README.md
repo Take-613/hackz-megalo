@@ -97,22 +97,55 @@ recognizer.stop()
 
 `show_input_devices_on_start=True` に設定。
 
-主な調整パラメータ:
+## `AppConfig` パラメータ一覧
 
-- `onset_delta`（アタック検出の感度）
-- `min_trigger_interval`（連続トリガの最小間隔秒）
-- `device`（入力デバイス名またはインデックス）
-- `monitor_input`（入力音をそのまま出力して自分で聴く）
-- `monitor_gain`（モニター音量）
-- `output_device`（モニター出力デバイス）
-- `min_rms_db` / `min_rms_rise_db`（誤検出抑制ゲート）
+`onset_live_basic_pitch.py` の `CONFIG = AppConfig(...)` にある全パラメータです。
 
-誤検出が多い場合の例:
+### 1) 入出力・実行設定
 
-`capture_seconds=0.5`, `min_rms_db=-55`, `min_rms_rise_db=6`,
-`calibration_seconds=1.0`, `onset_delta=0.2` を `CONFIG` に設定。
+- `output_dir` (default: `Path("outputs")`): 推論結果（MIDI/CSV）や一時ファイル出力先。
+- `sample_rate` (default: `44100`): 音声サンプリングレート（Hz）。
+- `blocksize` (default: `1024`): オーディオコールバック1回あたりのフレーム数。
+- `device` (default: `None`): 入力デバイス名またはインデックス。`None` は自動選択。
+- `output_device` (default: `"WF-1000XM5"`): モニター出力先デバイス名またはインデックス。
+- `monitor_input` (default: `True`): 入力音をそのまま出力へ流すかどうか。
+- `monitor_gain` (default: `1.0`): モニター出力ゲイン。
+- `show_input_devices_on_start` (default: `True`): 起動時に入力デバイス一覧を表示。
+- `quiet` (default: `False`): ログ出力を抑制するかどうか。
+- `save_inference_outputs` (default: `True`): Basic PitchのMIDI/CSVを保存するかどうか。
 
-`calibration_seconds` で指定した起動直後（例: 1秒）の無演奏音量をノイズ床として固定し、
-その基準に対して `min_rms_rise_db` 以上立ち上がったときだけアタック判定します。
+### 2) アタック検出・切り出し設定
 
-必要に応じて `print_level_stats=True` で入力レベルとノイズ床を確認できます。
+- `capture_seconds` (default: `1.0`): アタック検出後に切り出して解析する音声長（秒）。
+- `detect_window_seconds` (default: `2.0`): オンセット検出に使うリングバッファ長（秒）。
+- `min_trigger_interval` (default: `0.3`): 連続トリガーの最小間隔（秒）。
+- `hop_length` (default: `512`): `librosa` のオンセット検出ホップ長（サンプル）。
+- `onset_delta` (default: `0.2`): オンセット検出の閾値（大きいほど反応しにくい）。
+- `onset_pre_max` (default: `3`): ピーク検出の前方最大化フレーム数。
+- `onset_post_max` (default: `3`): ピーク検出の後方最大化フレーム数。
+- `onset_pre_avg` (default: `3`): 平均化に使う前方フレーム数。
+- `onset_post_avg` (default: `5`): 平均化に使う後方フレーム数。
+- `onset_wait` (default: `3`): 連続オンセット間で待機する最小フレーム数。
+
+### 3) 音量ゲート・ノイズ床設定（誤検出抑制）
+
+- `min_rms_db` (default: `-30.0`): 絶対RMSゲート閾値（dBFS）。
+- `min_rms_rise_db` (default: `6.0`): ノイズ床に対する必要上昇量（dB）。
+- `rms_gate_window_seconds` (default: `0.05`): ゲート判定に使う末尾窓長（秒）。
+- `calibration_seconds` (default: `1.0`): 起動直後にノイズ床を学習する時間（秒）。
+- `print_level_stats` (default: `False`): レベル統計ログ（RMS/ノイズ床）を表示。
+
+### 4) Basic Pitch 推論設定
+
+- `bp_onset_threshold` (default: `0.5`): Basic Pitchのオンセットしきい値。
+- `bp_frame_threshold` (default: `0.3`): Basic Pitchのフレームしきい値。
+- `bp_minimum_note_length` (default: `127.7`): 最小ノート長（ミリ秒）。
+- `bp_minimum_frequency` (default: `None`): 推論対象の最小周波数（Hz）。
+- `bp_maximum_frequency` (default: `None`): 推論対象の最大周波数（Hz）。
+- `bp_midi_tempo` (default: `120.0`): 出力MIDIテンポ。
+
+### 調整の目安
+
+- 誤検出が多い場合: `min_rms_db` を上げる（例: `-30 -> -24`）、`min_rms_rise_db` を上げる。
+- 取りこぼしが多い場合: `min_rms_db` を下げる、`onset_delta` を下げる。
+- まず観測したい場合: `print_level_stats=True` で `chunk_rms` と `noise_floor` を確認。
