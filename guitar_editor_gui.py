@@ -12,6 +12,106 @@ from onset_live_basic_pitch import CONFIG
 from run_guitar_code import execute_generated_script
 
 
+CHORD_FINGERINGS: dict[tuple[str, str], tuple[str | int, ...]] = {
+    ("C", "Major"): ("x", 3, 2, 0, 1, 0),
+    ("C", "Minor"): ("x", 3, 5, 5, 4, 3),
+    ("C", "7th"): ("x", 3, 2, 3, 1, 0),
+    ("C", "Major 7th"): ("x", 3, 2, 0, 0, 0),
+    ("C", "Minor 7th"): ("x", 3, 5, 3, 4, 3),
+    ("C", "sus4"): ("x", 3, 3, 0, 1, 1),
+    ("C", "add9"): ("x", 3, 2, 0, 3, 0),
+    ("C", "Power"): ("x", 3, 5, 5, "x", "x"),
+    ("C#", "Major"): ("x", 4, 6, 6, 6, 4),
+    ("C#", "Minor"): ("x", 4, 6, 6, 5, 4),
+    ("C#", "7th"): ("x", 4, 6, 4, 6, 4),
+    ("C#", "Major 7th"): ("x", 4, 6, 5, 6, 4),
+    ("C#", "Minor 7th"): ("x", 4, 6, 4, 5, 4),
+    ("C#", "sus4"): ("x", 4, 6, 6, 7, 4),
+    ("C#", "add9"): ("x", 4, 6, 6, 4, 4),
+    ("C#", "Power"): ("x", 4, 6, 6, "x", "x"),
+    ("D", "Major"): ("x", "x", 0, 2, 3, 2),
+    ("D", "Minor"): ("x", "x", 0, 2, 3, 1),
+    ("D", "7th"): ("x", "x", 0, 2, 1, 2),
+    ("D", "Major 7th"): ("x", "x", 0, 2, 2, 2),
+    ("D", "Minor 7th"): ("x", "x", 0, 2, 1, 1),
+    ("D", "sus4"): ("x", "x", 0, 2, 3, 3),
+    ("D", "add9"): ("x", "x", 0, 2, 3, 0),
+    ("D", "Power"): ("x", 5, 7, 7, "x", "x"),
+    ("D#", "Major"): ("x", 6, 8, 8, 8, 6),
+    ("D#", "Minor"): ("x", 6, 8, 8, 7, 6),
+    ("D#", "7th"): ("x", 6, 8, 6, 8, 6),
+    ("D#", "Major 7th"): ("x", 6, 8, 7, 8, 6),
+    ("D#", "Minor 7th"): ("x", 6, 8, 6, 7, 6),
+    ("D#", "sus4"): ("x", 6, 8, 8, 9, 6),
+    ("D#", "add9"): ("x", 6, 8, 8, 6, 6),
+    ("D#", "Power"): ("x", 6, 8, 8, "x", "x"),
+    ("E", "Major"): (0, 2, 2, 1, 0, 0),
+    ("E", "Minor"): (0, 2, 2, 0, 0, 0),
+    ("E", "7th"): (0, 2, 0, 1, 0, 0),
+    ("E", "Major 7th"): (0, 2, 1, 1, 0, 0),
+    ("E", "Minor 7th"): (0, 2, 0, 0, 0, 0),
+    ("E", "sus4"): (0, 2, 2, 2, 0, 0),
+    ("E", "add9"): (0, 2, 4, 1, 0, 0),
+    ("E", "Power"): (0, 2, 2, "x", "x", "x"),
+    ("F", "Major"): (1, 3, 3, 2, 1, 1),
+    ("F", "Minor"): (1, 3, 3, 1, 1, 1),
+    ("F", "7th"): (1, 3, 1, 2, 1, 1),
+    ("F", "Major 7th"): ("x", "x", 3, 2, 1, 0),
+    ("F", "Minor 7th"): (1, 3, 1, 1, 1, 1),
+    ("F", "sus4"): (1, 3, 3, 3, 1, 1),
+    ("F", "add9"): (1, 3, 0, 2, 1, 3),
+    ("F", "Power"): (1, 3, 3, "x", "x", "x"),
+    ("F#", "Major"): (2, 4, 4, 3, 2, 2),
+    ("F#", "Minor"): (2, 4, 4, 2, 2, 2),
+    ("F#", "7th"): (2, 4, 2, 3, 2, 2),
+    ("F#", "Major 7th"): (2, 4, 3, 3, 2, 2),
+    ("F#", "Minor 7th"): (2, 4, 2, 2, 2, 2),
+    ("F#", "sus4"): (2, 4, 4, 4, 2, 2),
+    ("F#", "add9"): (2, 4, 6, 3, 2, 2),
+    ("F#", "Power"): (2, 4, 4, "x", "x", "x"),
+    ("G", "Major"): (3, 2, 0, 0, 0, 3),
+    ("G", "Minor"): (3, 5, 5, 3, 3, 3),
+    ("G", "7th"): (3, 2, 0, 0, 0, 1),
+    ("G", "Major 7th"): (3, 2, 0, 0, 0, 2),
+    ("G", "Minor 7th"): (3, 5, 3, 3, 3, 3),
+    ("G", "sus4"): (3, 3, 0, 0, 1, 3),
+    ("G", "add9"): (3, 2, 0, 2, 0, 3),
+    ("G", "Power"): (3, 5, 5, "x", "x", "x"),
+    ("G#", "Major"): (4, 6, 6, 5, 4, 4),
+    ("G#", "Minor"): (4, 6, 6, 4, 4, 4),
+    ("G#", "7th"): (4, 6, 4, 5, 4, 4),
+    ("G#", "Major 7th"): (4, 6, 5, 5, 4, 4),
+    ("G#", "Minor 7th"): (4, 6, 4, 4, 4, 4),
+    ("G#", "sus4"): (4, 6, 6, 6, 4, 4),
+    ("G#", "add9"): (4, 6, 8, 5, 4, 4),
+    ("G#", "Power"): (4, 6, 6, "x", "x", "x"),
+    ("A", "Major"): ("x", 0, 2, 2, 2, 0),
+    ("A", "Minor"): ("x", 0, 2, 2, 1, 0),
+    ("A", "7th"): ("x", 0, 2, 0, 2, 0),
+    ("A", "Major 7th"): ("x", 0, 2, 1, 2, 0),
+    ("A", "Minor 7th"): ("x", 0, 2, 0, 1, 0),
+    ("A", "sus4"): ("x", 0, 2, 2, 3, 0),
+    ("A", "add9"): ("x", 0, 2, 4, 2, 0),
+    ("A", "Power"): ("x", 0, 2, 2, "x", "x"),
+    ("A#", "Major"): ("x", 1, 3, 3, 3, 1),
+    ("A#", "Minor"): ("x", 1, 3, 3, 2, 1),
+    ("A#", "7th"): ("x", 1, 3, 1, 3, 1),
+    ("A#", "Major 7th"): ("x", 1, 3, 2, 3, 1),
+    ("A#", "Minor 7th"): ("x", 1, 3, 1, 2, 1),
+    ("A#", "sus4"): ("x", 1, 3, 3, 4, 1),
+    ("A#", "add9"): ("x", 1, 3, 3, 1, 1),
+    ("A#", "Power"): ("x", 1, 3, 3, "x", "x"),
+    ("B", "Major"): ("x", 2, 4, 4, 4, 2),
+    ("B", "Minor"): ("x", 2, 4, 4, 3, 2),
+    ("B", "7th"): ("x", 2, 1, 2, 0, 2),
+    ("B", "Major 7th"): ("x", 2, 4, 3, 4, 2),
+    ("B", "Minor 7th"): ("x", 2, 4, 2, 3, 2),
+    ("B", "sus4"): ("x", 2, 4, 4, 5, 2),
+    ("B", "add9"): ("x", 2, 4, 4, 2, 2),
+    ("B", "Power"): ("x", 2, 4, 4, "x", "x"),
+}
+
+
 class GuitarEditorApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
@@ -40,10 +140,12 @@ class GuitarEditorApp:
 
         self.status_var = tk.StringVar(value="待機中")
         self.current_chord_var = tk.StringVar(value="-")
+        self.detected_chord_var = tk.StringVar(value="Detected Chord: -")
         self.level_var = tk.StringVar(value="RMS: -, Peak: -")
         self.paths_var = tk.StringVar(value="csv: (保存しない), midi: (保存しない)")
         self.rms_meter_var = tk.DoubleVar(value=0.0)
         self.peak_meter_var = tk.DoubleVar(value=0.0)
+        self._chord_history: list[str] = []
 
         self._apply_theme()
         self._build_ui()
@@ -62,12 +164,27 @@ class GuitarEditorApp:
             pass
 
         style.configure("TFrame", background="#1E1F22")
-        style.configure("TLabel", background="#1E1F22", foreground="#E6E6E6")
+        style.configure(
+            "TLabel",
+            background="#1E1F22",
+            foreground="#E6E6E6",
+            font=("Helvetica", 12),
+        )
         style.configure("TLabelframe", background="#1E1F22", foreground="#B8B8B8")
         style.configure("TLabelframe.Label", background="#1E1F22", foreground="#B8B8B8")
-        style.configure("TButton", padding=6)
-        style.configure("TEntry", fieldbackground="#2A2C31", foreground="#F0F0F0")
-        style.configure("TCombobox", fieldbackground="#2A2C31", foreground="#F0F0F0")
+        style.configure("TButton", padding=6, font=("Helvetica", 12))
+        style.configure(
+            "TEntry",
+            fieldbackground="#2A2C31",
+            foreground="#F0F0F0",
+            font=("Helvetica", 12),
+        )
+        style.configure(
+            "TCombobox",
+            fieldbackground="#2A2C31",
+            foreground="#F0F0F0",
+            font=("Helvetica", 11),
+        )
         style.configure(
             "Horizontal.TProgressbar", troughcolor="#2A2C31", background="#00C853"
         )
@@ -99,123 +216,127 @@ class GuitarEditorApp:
         clear_button = ttk.Button(control_frame, text="クリア", command=self._clear)
         clear_button.pack(side=tk.LEFT, padx=(8, 0))
 
+        ttk.Label(control_frame, text="  入力").pack(side=tk.LEFT, padx=(16, 2))
+        self.device_combo = ttk.Combobox(
+            control_frame,
+            textvariable=self.input_device_var,
+            state="readonly",
+            width=24,
+        )
+        self.device_combo.pack(side=tk.LEFT)
+
+        ttk.Label(control_frame, text="出力").pack(side=tk.LEFT, padx=(10, 2))
+        self.output_device_combo = ttk.Combobox(
+            control_frame,
+            textvariable=self.output_device_var,
+            state="readonly",
+            width=24,
+        )
+        self.output_device_combo.pack(side=tk.LEFT)
+
+        reload_button = ttk.Button(
+            control_frame, text="再読込", command=self._reload_devices
+        )
+        reload_button.pack(side=tk.LEFT, padx=(8, 0))
+
         self.transport_status = ttk.Label(
             control_frame,
             textvariable=self.status_var,
-            font=("Helvetica", 11, "bold"),
+            font=("Helvetica", 13, "bold"),
         )
         self.transport_status.pack(side=tk.RIGHT)
 
         content = ttk.Panedwindow(outer, orient=tk.HORIZONTAL)
         content.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
 
-        left_panel = ttk.Frame(content)
-        right_panel = ttk.Frame(content)
-        content.add(left_panel, weight=1)
-        content.add(right_panel, weight=3)
+        left_panel = ttk.LabelFrame(content, text="Guitar Input", padding=10)
+        center_panel = ttk.Frame(content)
+        right_panel = ttk.Panedwindow(content, orient=tk.VERTICAL)
+        content.add(left_panel, weight=22)
+        content.add(center_panel, weight=56)
+        content.add(right_panel, weight=22)
 
-        mixer_frame = ttk.LabelFrame(left_panel, text="Mixer", padding=8)
-        mixer_frame.pack(fill=tk.X)
+        left_panel.columnconfigure(0, weight=1)
 
-        ttk.Label(mixer_frame, text="現在のコード").grid(row=0, column=0, sticky=tk.W)
         ttk.Label(
-            mixer_frame,
+            left_panel,
             textvariable=self.current_chord_var,
-            font=("Helvetica", 16, "bold"),
-        ).grid(row=1, column=0, sticky=tk.W, pady=(2, 6))
+            font=("Helvetica", 30, "bold"),
+            anchor="center",
+        ).grid(row=0, column=0, sticky=tk.EW, pady=(0, 10))
 
-        ttk.Label(mixer_frame, text="RMS").grid(row=2, column=0, sticky=tk.W)
+        self.fretboard_canvas = tk.Canvas(
+            left_panel,
+            width=260,
+            height=520,
+            bg="#2A1C16",
+            highlightthickness=1,
+            highlightbackground="#4A362C",
+            relief=tk.FLAT,
+        )
+        self.fretboard_canvas.grid(row=1, column=0, sticky=tk.NSEW)
+        self._draw_fretboard_base()
+
+        ttk.Label(
+            left_panel,
+            textvariable=self.detected_chord_var,
+            font=("Helvetica", 14, "bold"),
+            anchor="center",
+            justify=tk.CENTER,
+        ).grid(row=2, column=0, sticky=tk.EW, pady=(10, 2))
+
+        level_block = ttk.Frame(left_panel)
+        level_block.grid(row=3, column=0, sticky=tk.EW, pady=(6, 0))
+        level_block.columnconfigure(0, weight=1)
+
+        ttk.Label(level_block, text="RMS", font=("Helvetica", 11, "bold")).grid(
+            row=0, column=0, sticky=tk.W
+        )
         self.rms_meter = ttk.Progressbar(
-            mixer_frame,
+            level_block,
             orient=tk.HORIZONTAL,
-            length=240,
+            length=250,
             variable=self.rms_meter_var,
             maximum=100,
             mode="determinate",
         )
-        self.rms_meter.grid(row=3, column=0, sticky=tk.EW)
+        self.rms_meter.grid(row=1, column=0, sticky=tk.EW)
 
-        ttk.Label(mixer_frame, text="Peak").grid(
-            row=4, column=0, sticky=tk.W, pady=(4, 0)
+        ttk.Label(level_block, text="Peak", font=("Helvetica", 11, "bold")).grid(
+            row=2, column=0, sticky=tk.W, pady=(4, 0)
         )
         self.peak_meter = ttk.Progressbar(
-            mixer_frame,
+            level_block,
             orient=tk.HORIZONTAL,
-            length=240,
+            length=250,
             variable=self.peak_meter_var,
             maximum=100,
             mode="determinate",
         )
-        self.peak_meter.grid(row=5, column=0, sticky=tk.EW)
+        self.peak_meter.grid(row=3, column=0, sticky=tk.EW)
 
-        ttk.Label(mixer_frame, textvariable=self.level_var).grid(
-            row=6, column=0, sticky=tk.W, pady=(6, 0)
+        ttk.Label(left_panel, textvariable=self.level_var, font=("Helvetica", 11)).grid(
+            row=4, column=0, sticky=tk.W, pady=(6, 0)
         )
-        ttk.Label(mixer_frame, textvariable=self.paths_var).grid(
-            row=7, column=0, sticky=tk.W, pady=(4, 0)
-        )
-
-        settings_frame = ttk.LabelFrame(
-            left_panel, text="Device & Detection", padding=8
-        )
-        settings_frame.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
-
-        self.device_combo = ttk.Combobox(
-            settings_frame,
-            textvariable=self.input_device_var,
-            state="readonly",
-            width=30,
-        )
-        self.device_combo.grid(row=0, column=1, sticky=tk.W)
-
-        self.output_device_combo = ttk.Combobox(
-            settings_frame,
-            textvariable=self.output_device_var,
-            state="readonly",
-            width=30,
-        )
-        self.output_device_combo.grid(row=1, column=1, sticky=tk.W, pady=(4, 0))
-
-        reload_button = ttk.Button(
-            settings_frame, text="デバイス再読込", command=self._reload_devices
-        )
-        reload_button.grid(row=0, column=2, padx=(8, 0), sticky=tk.W)
-
-        ttk.Label(settings_frame, text="入力デバイス").grid(
-            row=0, column=0, sticky=tk.W
-        )
-        ttk.Label(settings_frame, text="出力デバイス").grid(
-            row=1, column=0, sticky=tk.W, pady=(4, 0)
+        ttk.Label(left_panel, textvariable=self.paths_var, font=("Helvetica", 10)).grid(
+            row=5, column=0, sticky=tk.W, pady=(2, 0)
         )
 
-        rows = [
-            ("onset_delta", self.onset_delta_var),
-            ("min_rms_db", self.min_rms_db_var),
-            ("min_rms_rise_db", self.min_rms_rise_db_var),
-            ("capture_seconds", self.capture_seconds_var),
-            ("min_trigger_interval", self.min_trigger_interval_var),
-            ("bp_onset_threshold", self.bp_onset_threshold_var),
-            ("bp_frame_threshold", self.bp_frame_threshold_var),
-            ("bp_minimum_note_length", self.bp_minimum_note_length_var),
-            ("bp_midi_tempo", self.bp_midi_tempo_var),
-        ]
+        center_panel.columnconfigure(0, weight=1)
+        center_panel.rowconfigure(0, weight=3)
+        center_panel.rowconfigure(1, weight=1)
 
-        for index, (label, variable) in enumerate(rows, start=2):
-            ttk.Label(settings_frame, text=label).grid(
-                row=index, column=0, sticky=tk.W, pady=(4, 0)
-            )
-            entry = ttk.Entry(settings_frame, textvariable=variable, width=18)
-            entry.grid(row=index, column=1, sticky=tk.W, pady=(4, 0))
+        editor_frame = ttk.LabelFrame(center_panel, text="Code Editor", padding=8)
+        editor_frame.grid(row=0, column=0, sticky=tk.NSEW)
 
-        right_split = ttk.Panedwindow(right_panel, orient=tk.VERTICAL)
-        right_split.pack(fill=tk.BOTH, expand=True)
+        stream_frame = ttk.LabelFrame(center_panel, text="Chord Stream", padding=8)
+        stream_frame.grid(row=1, column=0, sticky=tk.NSEW, pady=(10, 0))
+        stream_frame.columnconfigure(0, weight=1)
 
-        editor_frame = ttk.LabelFrame(
-            right_split, text="Track Editor (Generated Code)", padding=8
-        )
-        log_frame = ttk.LabelFrame(right_split, text="Console", padding=8)
-        right_split.add(editor_frame, weight=4)
-        right_split.add(log_frame, weight=1)
+        output_frame = ttk.LabelFrame(right_panel, text="Output", padding=8)
+        variables_frame = ttk.LabelFrame(right_panel, text="Variables", padding=8)
+        right_panel.add(output_frame, weight=1)
+        right_panel.add(variables_frame, weight=1)
 
         ruler = ttk.Label(
             editor_frame,
@@ -231,25 +352,58 @@ class GuitarEditorApp:
             bg="#17181B",
             fg="#EAEAEA",
             insertbackground="#FFFFFF",
-            font=("Menlo", 14),
+            font=("Menlo", 15),
             padx=10,
             pady=8,
         )
         self.editor.pack(fill=tk.BOTH, expand=True)
 
         self.log = ScrolledText(
-            log_frame,
+            output_frame,
             wrap=tk.WORD,
             height=8,
             state=tk.DISABLED,
             bg="#111214",
             fg="#CFE8CF",
             insertbackground="#FFFFFF",
-            font=("Menlo", 11),
+            font=("Menlo", 12),
             padx=8,
             pady=6,
         )
         self.log.pack(fill=tk.BOTH, expand=True)
+
+        self.variables_box = ScrolledText(
+            variables_frame,
+            wrap=tk.WORD,
+            height=8,
+            state=tk.DISABLED,
+            bg="#111214",
+            fg="#E6E6E6",
+            insertbackground="#FFFFFF",
+            font=("Menlo", 12),
+            padx=8,
+            pady=6,
+        )
+        self.variables_box.pack(fill=tk.BOTH, expand=True)
+
+        self.chord_chip_row = ttk.Frame(stream_frame)
+        self.chord_chip_row.grid(row=0, column=0, sticky=tk.W)
+
+        self.stream_snippet = ScrolledText(
+            stream_frame,
+            wrap=tk.WORD,
+            height=5,
+            state=tk.DISABLED,
+            bg="#132238",
+            fg="#D7E6FF",
+            insertbackground="#FFFFFF",
+            font=("Menlo", 12),
+            padx=8,
+            pady=6,
+        )
+        self.stream_snippet.grid(row=1, column=0, sticky=tk.NSEW, pady=(8, 0))
+
+        self._update_variables_box()
 
     def _reload_devices(self) -> None:
         try:
@@ -362,10 +516,16 @@ class GuitarEditorApp:
     def _clear(self) -> None:
         self.pipeline.clear_script()
         self.current_chord_var.set("-")
+        self.detected_chord_var.set("Detected Chord: -")
         self.level_var.set("RMS: -, Peak: -")
         self.paths_var.set("csv: (保存しない), midi: (保存しない)")
         self.rms_meter_var.set(0.0)
         self.peak_meter_var.set(0.0)
+        self._chord_history.clear()
+        self._render_chord_stream()
+        self._set_stream_snippet("")
+        self._draw_fretboard_base()
+        self._update_variables_box()
 
     def _poll_events(self) -> None:
         while True:
@@ -379,6 +539,7 @@ class GuitarEditorApp:
     def _handle_event(self, event: PipelineEvent) -> None:
         if event.kind == "analysis":
             self.current_chord_var.set(event.chord_name or "None")
+            self.detected_chord_var.set(self._build_chord_formula(event.chord_name))
             if event.rms_dbfs is not None and event.peak_dbfs is not None:
                 self.level_var.set(
                     f"RMS: {event.rms_dbfs:.1f} dBFS, Peak: {event.peak_dbfs:.1f} dBFS"
@@ -390,18 +551,27 @@ class GuitarEditorApp:
             )
             if event.script_text is not None:
                 self._set_editor_text(event.script_text)
+            if event.chord_name and event.chord_name != "None":
+                self._push_chord_stream(event.chord_name)
+            self._update_fretboard(event.chord_name)
             suffix = f" | snippet: {event.snippet}" if event.snippet else ""
             self._append_log(
                 f"{event.timestamp or '-'} | chord: {event.chord_name or 'None'}{suffix}"
             )
+            self._set_stream_snippet(event.snippet or "")
+            self._update_variables_box()
             return
 
         if event.kind == "error":
             self.status_var.set("エラー")
             self._append_log(f"ERROR: {event.message}")
+            self._set_stream_snippet(f"ERROR: {event.message}")
+            self._update_variables_box()
             return
 
         self._append_log(event.message)
+        self._set_stream_snippet(event.message)
+        self._update_variables_box()
 
     def _set_editor_text(self, text: str) -> None:
         self.editor.delete("1.0", tk.END)
@@ -412,6 +582,229 @@ class GuitarEditorApp:
         self.log.insert(tk.END, message + "\n")
         self.log.see(tk.END)
         self.log.configure(state=tk.DISABLED)
+
+    def _push_chord_stream(self, chord_name: str) -> None:
+        self._chord_history.append(chord_name)
+        self._chord_history = self._chord_history[-8:]
+        self._render_chord_stream()
+
+    def _render_chord_stream(self) -> None:
+        for child in self.chord_chip_row.winfo_children():
+            child.destroy()
+
+        if not self._chord_history:
+            ttk.Label(self.chord_chip_row, text="(no chords yet)").pack(side=tk.LEFT)
+            return
+
+        for index, chord_name in enumerate(self._chord_history):
+            chip = tk.Label(
+                self.chord_chip_row,
+                text=chord_name,
+                bg="#1F2F1F",
+                fg="#D7FFD7",
+                padx=10,
+                pady=4,
+                font=("Helvetica", 11, "bold"),
+                relief=tk.GROOVE,
+                bd=1,
+            )
+            chip.pack(side=tk.LEFT, padx=(0, 6))
+            if index < len(self._chord_history) - 1:
+                arrow = ttk.Label(self.chord_chip_row, text="→", font=("Helvetica", 12, "bold"))
+                arrow.pack(side=tk.LEFT, padx=(0, 6))
+
+    def _set_stream_snippet(self, text: str) -> None:
+        self.stream_snippet.configure(state=tk.NORMAL)
+        self.stream_snippet.delete("1.0", tk.END)
+        self.stream_snippet.insert("1.0", text)
+        self.stream_snippet.configure(state=tk.DISABLED)
+
+    def _draw_fretboard_base(self) -> None:
+        self.fretboard_canvas.delete("all")
+        width = int(self.fretboard_canvas["width"])
+        height = int(self.fretboard_canvas["height"])
+
+        self.fretboard_canvas.create_rectangle(
+            0, 0, width, height, fill="#3A241B", outline=""
+        )
+
+        left = 28
+        right = width - 28
+        top = 20
+        bottom = height - 32
+        self._fretboard_geometry = (left, right, top, bottom)
+        self._string_x_positions = [
+            left + (right - left) * (string_index / 5) for string_index in range(6)
+        ]
+        self._fret_y_positions = [
+            top + (bottom - top) * (fret_index / 7) for fret_index in range(8)
+        ]
+
+        self.fretboard_canvas.create_rectangle(
+            left - 6, top - 12, right + 6, top - 4, fill="#D7C7A5", outline=""
+        )
+
+        for string_index in range(6):
+            x = self._string_x_positions[string_index]
+            self.fretboard_canvas.create_line(
+                x,
+                top,
+                x,
+                bottom,
+                fill="#EFEFEF",
+                width=1 + (string_index // 2),
+            )
+
+        for fret_index in range(1, 8):
+            y = self._fret_y_positions[fret_index]
+            self.fretboard_canvas.create_line(
+                left, y, right, y, fill="#B7B7B7", width=2
+            )
+
+            if fret_index in (3, 5, 7):
+                self.fretboard_canvas.create_oval(
+                    (left + right) / 2 - 4,
+                    y - (self._fret_y_positions[1] - top) / 2 - 4,
+                    (left + right) / 2 + 4,
+                    y - (self._fret_y_positions[1] - top) / 2 + 4,
+                    fill="#E6D2A3",
+                    outline="",
+                )
+
+    def _update_fretboard(self, chord_name: str | None) -> None:
+        self._draw_fretboard_base()
+        if not chord_name or chord_name == "None":
+            return
+
+        parts = chord_name.split(" ", 1)
+        root = parts[0]
+        chord_type = parts[1] if len(parts) > 1 else "Major"
+
+        if chord_type == "Single":
+            single_note_positions: dict[str, tuple[int, int]] = {
+                "C": (1, 3),
+                "C#": (1, 4),
+                "D": (1, 5),
+                "D#": (1, 6),
+                "E": (0, 0),
+                "F": (0, 1),
+                "F#": (0, 2),
+                "G": (0, 3),
+                "G#": (0, 4),
+                "A": (0, 5),
+                "A#": (0, 6),
+                "B": (0, 7),
+            }
+            pos = single_note_positions.get(root)
+            if pos is None:
+                return
+            shape_list: list[str | int] = ["x", "x", "x", "x", "x", "x"]
+            shape_list[pos[0]] = pos[1]
+            shape: tuple[str | int, ...] = tuple(shape_list)
+        else:
+            shape = CHORD_FINGERINGS.get((root, chord_type))
+
+        if shape is None:
+            return
+
+        fretted_values = [value for value in shape if isinstance(value, int) and value > 0]
+        base_fret = min(fretted_values) if fretted_values else 1
+        if base_fret < 1:
+            base_fret = 1
+
+        left, right, top, _ = self._fretboard_geometry
+        if base_fret > 1:
+            self.fretboard_canvas.create_text(
+                left - 18,
+                (self._fret_y_positions[1] + top) / 2,
+                text=str(base_fret),
+                fill="#F5E8C5",
+                font=("Helvetica", 12, "bold"),
+            )
+
+        for string_index, value in enumerate(shape):
+            x = self._string_x_positions[string_index]
+            if value == "x":
+                self.fretboard_canvas.create_text(
+                    x,
+                    top - 16,
+                    text="x",
+                    fill="#E8E8E8",
+                    font=("Helvetica", 11, "bold"),
+                )
+                continue
+
+            if value == 0:
+                self.fretboard_canvas.create_oval(
+                    x - 5,
+                    top - 20,
+                    x + 5,
+                    top - 10,
+                    outline="#E8E8E8",
+                    width=2,
+                )
+                continue
+
+            if isinstance(value, int):
+                display_fret = value - base_fret + 1
+                if not 1 <= display_fret <= 7:
+                    continue
+
+                y_top = self._fret_y_positions[display_fret - 1]
+                y_bottom = self._fret_y_positions[display_fret]
+                y = (y_top + y_bottom) / 2
+
+                self.fretboard_canvas.create_oval(
+                    x - 14,
+                    y - 14,
+                    x + 14,
+                    y + 14,
+                    fill="#8FFF9A",
+                    outline="#E8FFE9",
+                    width=1,
+                )
+
+    def _build_chord_formula(self, chord_name: str | None) -> str:
+        if not chord_name or chord_name == "None":
+            return "Detected Chord: -"
+
+        note_names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+        intervals_map = {
+            "Single": [0],
+            "Major": [0, 4, 7],
+            "Minor": [0, 3, 7],
+            "Power": [0, 7],
+            "7th": [0, 4, 7, 10],
+            "Major 7th": [0, 4, 7, 11],
+            "Minor 7th": [0, 3, 7, 10],
+            "sus4": [0, 5, 7],
+            "add9": [0, 2, 4, 7],
+        }
+
+        parts = chord_name.split(" ", 1)
+        if not parts:
+            return f"Detected Chord: {chord_name}"
+
+        root = parts[0]
+        chord_type = parts[1] if len(parts) > 1 else ""
+        if root not in note_names or chord_type not in intervals_map:
+            return f"Detected Chord: {chord_name}"
+
+        root_index = note_names.index(root)
+        notes = [note_names[(root_index + interval) % 12] for interval in intervals_map[chord_type]]
+        return f"Detected Chord: {root} ({'-'.join(notes)})"
+
+    def _update_variables_box(self) -> None:
+        lines = [
+            f"status: {self.status_var.get()}",
+            f"current_chord: {self.current_chord_var.get()}",
+            f"{self.level_var.get()}",
+            f"{self.paths_var.get()}",
+        ]
+        self.variables_box.configure(state=tk.NORMAL)
+        self.variables_box.delete("1.0", tk.END)
+        self.variables_box.insert("1.0", "\n".join(lines))
+        self.variables_box.configure(state=tk.DISABLED)
 
     @staticmethod
     def _db_to_meter(dbfs: float) -> float:
