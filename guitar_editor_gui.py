@@ -115,7 +115,7 @@ CHORD_FINGERINGS: dict[tuple[str, str], tuple[str | int, ...]] = {
 class GuitarEditorApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
-        self.root.title("Guitar Code Editor - DTM Layout")
+        self.root.title("ChordCoder Studio")
         self.root.geometry("1280x820")
 
         self.pipeline = GuitarCodingPipeline()
@@ -156,38 +156,89 @@ class GuitarEditorApp:
         self.root.after(100, self._poll_events)
 
     def _apply_theme(self) -> None:
-        self.root.configure(bg="#1E1F22")
+        self.root.configure(bg="#0F1117")
         style = ttk.Style()
         try:
             style.theme_use("clam")
         except tk.TclError:
             pass
 
-        style.configure("TFrame", background="#1E1F22")
+        style.configure("TFrame", background="#0F1117")
         style.configure(
             "TLabel",
-            background="#1E1F22",
-            foreground="#E6E6E6",
-            font=("Helvetica", 12),
+            background="#0F1117",
+            foreground="#E5E7EB",
+            font=("Segoe UI", 11),
         )
-        style.configure("TLabelframe", background="#1E1F22", foreground="#B8B8B8")
-        style.configure("TLabelframe.Label", background="#1E1F22", foreground="#B8B8B8")
-        style.configure("TButton", padding=6, font=("Helvetica", 12))
+        style.configure(
+            "TLabelframe",
+            background="#0F1117",
+            foreground="#94A3B8",
+            borderwidth=1,
+            relief="solid",
+        )
+        style.configure(
+            "TLabelframe.Label",
+            background="#0F1117",
+            foreground="#94A3B8",
+            font=("Segoe UI", 10, "bold"),
+        )
+        style.configure(
+            "TButton",
+            padding=(10, 6),
+            font=("Segoe UI", 10, "bold"),
+            background="#1F2937",
+            foreground="#E5E7EB",
+        )
+        style.map(
+            "TButton",
+            background=[("active", "#374151")],
+            foreground=[("active", "#F9FAFB")],
+        )
+        style.configure(
+            "Accent.TButton",
+            padding=(10, 6),
+            font=("Segoe UI", 10, "bold"),
+            background="#2563EB",
+            foreground="#F8FAFC",
+        )
+        style.map(
+            "Accent.TButton",
+            background=[("active", "#1D4ED8")],
+            foreground=[("active", "#FFFFFF")],
+        )
+        style.configure(
+            "Warn.TButton",
+            padding=(10, 6),
+            font=("Segoe UI", 10, "bold"),
+            background="#7C2D12",
+            foreground="#F8FAFC",
+        )
+        style.map(
+            "Warn.TButton",
+            background=[("active", "#9A3412")],
+            foreground=[("active", "#FFFFFF")],
+        )
         style.configure(
             "TEntry",
-            fieldbackground="#2A2C31",
-            foreground="#F0F0F0",
-            font=("Helvetica", 12),
+            fieldbackground="#111827",
+            foreground="#E5E7EB",
+            font=("Segoe UI", 11),
+            borderwidth=1,
         )
         style.configure(
             "TCombobox",
-            fieldbackground="#2A2C31",
-            foreground="#F0F0F0",
-            font=("Helvetica", 11),
+            fieldbackground="#111827",
+            foreground="#E5E7EB",
+            font=("Segoe UI", 10),
         )
         style.configure(
-            "Horizontal.TProgressbar", troughcolor="#2A2C31", background="#00C853"
+            "Horizontal.TProgressbar",
+            troughcolor="#1F2937",
+            background="#22C55E",
+            bordercolor="#1F2937",
         )
+        style.configure("Status.TLabel", foreground="#93C5FD", font=("Segoe UI", 11, "bold"))
 
     def _build_ui(self) -> None:
         outer = ttk.Frame(self.root, padding=10)
@@ -196,7 +247,9 @@ class GuitarEditorApp:
         control_frame = ttk.LabelFrame(outer, text="Transport", padding=8)
         control_frame.pack(fill=tk.X)
 
-        self.start_button = ttk.Button(control_frame, text="開始", command=self._start)
+        self.start_button = ttk.Button(
+            control_frame, text="開始", command=self._start, style="Accent.TButton"
+        )
         self.start_button.pack(side=tk.LEFT)
 
         self.stop_button = ttk.Button(
@@ -210,10 +263,14 @@ class GuitarEditorApp:
         save_button = ttk.Button(control_frame, text="保存", command=self._save)
         save_button.pack(side=tk.LEFT, padx=(8, 0))
 
-        run_button = ttk.Button(control_frame, text="実行", command=self._run_script)
+        run_button = ttk.Button(
+            control_frame, text="実行", command=self._run_script, style="Accent.TButton"
+        )
         run_button.pack(side=tk.LEFT, padx=(8, 0))
 
-        clear_button = ttk.Button(control_frame, text="クリア", command=self._clear)
+        clear_button = ttk.Button(
+            control_frame, text="クリア", command=self._clear, style="Warn.TButton"
+        )
         clear_button.pack(side=tk.LEFT, padx=(8, 0))
 
         ttk.Label(control_frame, text="  入力").pack(side=tk.LEFT, padx=(16, 2))
@@ -242,7 +299,7 @@ class GuitarEditorApp:
         self.transport_status = ttk.Label(
             control_frame,
             textvariable=self.status_var,
-            font=("Helvetica", 13, "bold"),
+            style="Status.TLabel",
         )
         self.transport_status.pack(side=tk.RIGHT)
 
@@ -269,9 +326,9 @@ class GuitarEditorApp:
             left_panel,
             width=260,
             height=520,
-            bg="#2A1C16",
+            bg="#2B1F1A",
             highlightthickness=1,
-            highlightbackground="#4A362C",
+            highlightbackground="#334155",
             relief=tk.FLAT,
         )
         self.fretboard_canvas.grid(row=1, column=0, sticky=tk.NSEW)
@@ -280,7 +337,7 @@ class GuitarEditorApp:
         ttk.Label(
             left_panel,
             textvariable=self.detected_chord_var,
-            font=("Helvetica", 14, "bold"),
+            font=("Segoe UI", 13, "bold"),
             anchor="center",
             justify=tk.CENTER,
         ).grid(row=2, column=0, sticky=tk.EW, pady=(10, 2))
@@ -349,12 +406,16 @@ class GuitarEditorApp:
             editor_frame,
             wrap=tk.NONE,
             height=24,
-            bg="#17181B",
-            fg="#EAEAEA",
-            insertbackground="#FFFFFF",
-            font=("Menlo", 15),
+            bg="#0B1220",
+            fg="#E2E8F0",
+            insertbackground="#93C5FD",
+            selectbackground="#1E3A8A",
+            selectforeground="#E2E8F0",
+            font=("Consolas", 14),
             padx=10,
             pady=8,
+            relief=tk.FLAT,
+            borderwidth=0,
         )
         self.editor.pack(fill=tk.BOTH, expand=True)
 
@@ -363,12 +424,14 @@ class GuitarEditorApp:
             wrap=tk.WORD,
             height=8,
             state=tk.DISABLED,
-            bg="#111214",
-            fg="#CFE8CF",
-            insertbackground="#FFFFFF",
-            font=("Menlo", 12),
+            bg="#0F172A",
+            fg="#C7F9CC",
+            insertbackground="#93C5FD",
+            font=("Consolas", 12),
             padx=8,
             pady=6,
+            relief=tk.FLAT,
+            borderwidth=0,
         )
         self.log.pack(fill=tk.BOTH, expand=True)
 
@@ -377,12 +440,14 @@ class GuitarEditorApp:
             wrap=tk.WORD,
             height=8,
             state=tk.DISABLED,
-            bg="#111214",
-            fg="#E6E6E6",
-            insertbackground="#FFFFFF",
-            font=("Menlo", 12),
+            bg="#0F172A",
+            fg="#D1D5DB",
+            insertbackground="#93C5FD",
+            font=("Consolas", 12),
             padx=8,
             pady=6,
+            relief=tk.FLAT,
+            borderwidth=0,
         )
         self.variables_box.pack(fill=tk.BOTH, expand=True)
 
@@ -394,12 +459,14 @@ class GuitarEditorApp:
             wrap=tk.WORD,
             height=5,
             state=tk.DISABLED,
-            bg="#132238",
-            fg="#D7E6FF",
-            insertbackground="#FFFFFF",
-            font=("Menlo", 12),
+            bg="#10233E",
+            fg="#DBEAFE",
+            insertbackground="#93C5FD",
+            font=("Consolas", 12),
             padx=8,
             pady=6,
+            relief=tk.FLAT,
+            borderwidth=0,
         )
         self.stream_snippet.grid(row=1, column=0, sticky=tk.NSEW, pady=(8, 0))
 
@@ -523,7 +590,9 @@ class GuitarEditorApp:
         self.peak_meter_var.set(0.0)
         self._chord_history.clear()
         self._render_chord_stream()
-        self._set_stream_snippet("")
+        self._set_stream_snippet(
+            self._format_message(kind="status", raw_message="エディター表示をクリアしました。")
+        )
         self._draw_fretboard_base()
         self._update_variables_box()
 
@@ -558,19 +627,30 @@ class GuitarEditorApp:
             self._append_log(
                 f"{event.timestamp or '-'} | chord: {event.chord_name or 'None'}{suffix}"
             )
-            self._set_stream_snippet(event.snippet or "")
+            self._set_stream_snippet(
+                self._format_message(
+                    kind="analysis",
+                    chord_name=event.chord_name,
+                    snippet=event.snippet,
+                    timestamp=event.timestamp,
+                )
+            )
             self._update_variables_box()
             return
 
         if event.kind == "error":
             self.status_var.set("エラー")
             self._append_log(f"ERROR: {event.message}")
-            self._set_stream_snippet(f"ERROR: {event.message}")
+            self._set_stream_snippet(
+                self._format_message(kind="error", raw_message=event.message)
+            )
             self._update_variables_box()
             return
 
         self._append_log(event.message)
-        self._set_stream_snippet(event.message)
+        self._set_stream_snippet(
+            self._format_message(kind="status", raw_message=event.message)
+        )
         self._update_variables_box()
 
     def _set_editor_text(self, text: str) -> None:
@@ -600,17 +680,22 @@ class GuitarEditorApp:
             chip = tk.Label(
                 self.chord_chip_row,
                 text=chord_name,
-                bg="#1F2F1F",
-                fg="#D7FFD7",
+                bg="#1E293B",
+                fg="#BFDBFE",
                 padx=10,
                 pady=4,
-                font=("Helvetica", 11, "bold"),
+                font=("Segoe UI", 10, "bold"),
                 relief=tk.GROOVE,
                 bd=1,
             )
             chip.pack(side=tk.LEFT, padx=(0, 6))
             if index < len(self._chord_history) - 1:
-                arrow = ttk.Label(self.chord_chip_row, text="→", font=("Helvetica", 12, "bold"))
+                arrow = ttk.Label(
+                    self.chord_chip_row,
+                    text="→",
+                    font=("Segoe UI", 12, "bold"),
+                    foreground="#60A5FA",
+                )
                 arrow.pack(side=tk.LEFT, padx=(0, 6))
 
     def _set_stream_snippet(self, text: str) -> None:
@@ -619,14 +704,68 @@ class GuitarEditorApp:
         self.stream_snippet.insert("1.0", text)
         self.stream_snippet.configure(state=tk.DISABLED)
 
+    def _format_message(
+        self,
+        *,
+        kind: str,
+        chord_name: str | None = None,
+        snippet: str | None = None,
+        raw_message: str | None = None,
+        timestamp: str | None = None,
+    ) -> str:
+        if kind == "analysis":
+            lines = ["[解析結果]"]
+            lines.append(f"・検出コード: {chord_name or 'None'}")
+
+            chord_formula = self._build_chord_formula(chord_name)
+            if chord_formula != "Detected Chord: -":
+                lines.append(
+                    f"・構成音: {chord_formula.replace('Detected Chord: ', '')}"
+                )
+
+            if snippet:
+                lines.append("・反映内容: 生成コードへ追加しました")
+                lines.append("・追加スニペット:")
+                lines.append(f"    {snippet}")
+            else:
+                lines.append("・反映内容: 対応ルールがないため追加はありません")
+
+            if timestamp:
+                lines.append(f"・時刻: {timestamp}")
+            return "\n".join(lines)
+
+        if kind == "error":
+            return "\n".join(
+                [
+                    "[エラー]",
+                    "・処理中に問題が発生しました",
+                    f"・詳細: {raw_message or '不明なエラー'}",
+                    "・対処: デバイス設定と入力音量を確認してください",
+                ]
+            )
+
+        status = raw_message or "待機中"
+        if "開始" in status:
+            summary = "取り込みを開始しました"
+        elif "停止" in status:
+            summary = "取り込みを停止しました"
+        elif "保存" in status:
+            summary = "スクリプトを保存しました"
+        elif "実行" in status:
+            summary = "スクリプトを実行しました"
+        elif "クリア" in status:
+            summary = "表示と履歴をクリアしました"
+        else:
+            summary = status
+
+        return "\n".join(["[ステータス]", f"・{summary}", f"・詳細: {status}"])
+
     def _draw_fretboard_base(self) -> None:
         self.fretboard_canvas.delete("all")
         width = int(self.fretboard_canvas["width"])
         height = int(self.fretboard_canvas["height"])
 
-        self.fretboard_canvas.create_rectangle(
-            0, 0, width, height, fill="#3A241B", outline=""
-        )
+        self.fretboard_canvas.create_rectangle(0, 0, width, height, fill="#3A241B", outline="")
 
         left = 28
         right = width - 28
@@ -641,7 +780,7 @@ class GuitarEditorApp:
         ]
 
         self.fretboard_canvas.create_rectangle(
-            left - 6, top - 12, right + 6, top - 4, fill="#D7C7A5", outline=""
+            left - 6, top - 12, right + 6, top - 4, fill="#E5D4B1", outline=""
         )
 
         for string_index in range(6):
@@ -759,8 +898,8 @@ class GuitarEditorApp:
                     y - 14,
                     x + 14,
                     y + 14,
-                    fill="#8FFF9A",
-                    outline="#E8FFE9",
+                    fill="#38BDF8",
+                    outline="#E0F2FE",
                     width=1,
                 )
 
