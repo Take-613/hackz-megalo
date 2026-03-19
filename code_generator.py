@@ -4,12 +4,18 @@ import json
 from pathlib import Path
 
 class GuitarCodeGenerator:
-    def __init__(self, mapping_file_path: str = "code_mapping.json"):
+    def __init__(
+        self,
+        mapping_file_path: str = "code_mapping.json",
+        *,
+        render_terminal: bool = True,
+    ):
         """
         初期化時にJSONファイルから対応表を読み込む
         """
         self.code_mapping = {}
         self._load_mapping(mapping_file_path)
+        self.render_terminal = render_terminal
         
         # 生成されたコードの各行を保持するリスト
         self.generated_lines = []
@@ -42,7 +48,8 @@ class GuitarCodeGenerator:
         self.generated_lines.append(snippet)
 
         # ターミナルの表示を更新（ライブコーディング演出）
-        self._render_terminal()
+        if self.render_terminal:
+            self._render_terminal()
 
     def _render_terminal(self):
         """
