@@ -17,8 +17,8 @@ from onset_live_basic_pitch import (
 
 @dataclass(frozen=True)
 class PipelineSettings:
-    input_device: str | None = None
-    output_device: str | None = CONFIG.output_device
+    input_device: str | int | None = None
+    output_device: str | int | None = CONFIG.output_device
     monitor_input: bool = True
     quiet: bool = True
     show_input_devices_on_start: bool = False

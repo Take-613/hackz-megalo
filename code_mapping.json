@@ -1,8 +1,52 @@
 {
-  "C Major": "print('🎸 ギタープログラミング開始！')",
-  "G Power": "for i in range(3):",
-  "D Single": "    print(f'Rock! {i}')",
-  "A Minor": "def play_music():",
-  "E Power": "    pass",
-  "C Single": "play_music()"
+  "C Major": {
+    "_message": "🔢 [数字] 0(C), 1(D), 2(E), 3(F), 4(G)",
+    "C Major": "0", "D Major": "1", "E Major": "2", "F Major": "3", "G Major": "4"
+  },
+  "D Major": {
+    "_message": "🔤 [変数] a~e(C~G) / x(A), y(B), z(C#)",
+    "C Major": "a", "D Major": "b", "E Major": "c", "F Major": "d", "G Major": "e", 
+    "A Major": "x", "B Major": "y", "C Minor": "z"
+  },
+  "E Major": {
+    "_message": "🧮 [演算子] C(算術), F(代入=), G(比較==)",
+    "C Major": {
+      "_message": "🧮 [算術] C(+), D(-), E(*), F(/), G(%)",
+      "C Major": " + ", "D Major": " - ", "E Major": " * ", "F Major": " / ", "G Major": " % "
+    },
+    "F Major": {
+      "_message": "🧮 [代入] C(=)",
+      "C Major": " = "
+    },
+    "G Major": {
+      "_message": "🧮 [比較] C(==)",
+      "C Major": " == "
+    }
+  },
+  "F Major": {
+    "_message": "📚 [定型句セット] C(import random), F(random.randint(0,2))",
+    "C Major": "import random",
+    "F Major": "random.randint(0, 2)"
+  },
+  "G Major": {
+    "_message": "🔀 [制御・関数] C(if系), F(print), G(int(input()))",
+    "C Major": {
+      "_message": "🔀 [if関連] C(if), D(elif), E(else:), F(:)",
+      "C Major": "if ", "D Major": "elif ", "E Major": "else:", "F Major": ":"
+    },
+    "F Major": "print(",
+    "G Major": "int(input())"
+  },
+  "A Major": {
+    "_message": "📦 [記号] C(左括弧), D(コンマ)",
+    "C Major": "(", "D Major": ", "
+  },
+  "B Major": {
+    "_message": "⚡ [アクション] C(閉じる), D(タブ), F(確定/改行), G(1行削除), A(終了/Ctrl+C)",
+    "C Major": "_CMD_CLOSE",
+    "D Major": "    ",
+    "F Major": "_CMD_NEWLINE",
+    "G Major": "_CMD_DELETE",
+    "A Major": "_CMD_EXIT"
+  }
 }

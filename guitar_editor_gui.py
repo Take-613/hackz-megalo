@@ -19,8 +19,8 @@ class GuitarEditorApp:
         self.root.geometry("1280x820")
 
         self.pipeline = GuitarCodingPipeline()
-        self._input_device_map: dict[str, str | None] = {}
-        self._output_device_map: dict[str, str | None] = {}
+        self._input_device_map: dict[str, int | None] = {}
+        self._output_device_map: dict[str, int | None] = {}
 
         self.input_device_var = tk.StringVar(value="System default")
         self.output_device_var = tk.StringVar(value="System default")
@@ -267,11 +267,11 @@ class GuitarEditorApp:
             if device["max_input_channels"] > 0:
                 input_label = f"[{index}] {name}"
                 input_items.append(input_label)
-                self._input_device_map[input_label] = name
+                self._input_device_map[input_label] = index
             if device["max_output_channels"] > 0:
                 output_label = f"[{index}] {name}"
                 output_items.append(output_label)
-                self._output_device_map[output_label] = name
+                self._output_device_map[output_label] = index
 
         self.device_combo["values"] = input_items
         self.output_device_combo["values"] = output_items
@@ -282,8 +282,8 @@ class GuitarEditorApp:
             self.output_device_var.set("System default")
 
         if CONFIG.output_device:
-            for label, value in self._output_device_map.items():
-                if value and str(CONFIG.output_device).lower() in value.lower():
+            for label in self._output_device_map:
+                if str(CONFIG.output_device).lower() in label.lower():
                     if self.output_device_var.get() == "System default":
                         self.output_device_var.set(label)
                     break
