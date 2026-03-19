@@ -1,14 +1,13 @@
 from __future__ import annotations
 
+import time
 import sys
 import subprocess
-from dataclasses import replace
+from pathlib import Path
 
 import sounddevice as sd
 
-from code_generator import GuitarCodeGenerator
-from detection_code import analyze_chord_from_csv, analyze_chord_from_midi_notes
-from onset_live_basic_pitch import CONFIG, AnalysisResult, AttackStrokeRecognizer
+from gui_pipeline import GuitarCodingPipeline, PipelineSettings
 
 
 def _list_output_devices() -> list[tuple[int, str]]:
@@ -53,40 +52,45 @@ def _choose_output_device() -> str | None:
 
 def main() -> None:
     output_device = _choose_output_device()
-    config = replace(
-        CONFIG,
+    pipeline = GuitarCodingPipeline(
+        mapping_file_path="code_mapping.json",
+        output_path=Path("output_script.py"),
+    )
+    settings = PipelineSettings(
+        output_device=output_device,
+        monitor_input=True,
         quiet=True,
         show_input_devices_on_start=False,
-        monitor_input=True,
-        output_device=output_device,
     )
 
-    generator = GuitarCodeGenerator("code_mapping.json")
-
-    def _on_result(result: AnalysisResult) -> None:
-        print(
-            f"[Debug] 音量: RMS={result.rms_dbfs:.1f} dBFS / Peak={result.peak_dbfs:.1f} dBFS",
-            flush=True,
-        )
-        if result.csv_path is not None:
-            chord_name = analyze_chord_from_csv(result.csv_path)
-        else:
-            chord_name = analyze_chord_from_midi_notes(result.midi_notes)
-
-        if chord_name and chord_name != "None":
-            print(f"🎵 ギターのコード: {chord_name}", flush=True)
-            generator.receive_chord(chord_name)
-
-    recognizer = AttackStrokeRecognizer(config=config, on_result=_on_result)
-
     print("\n🎸 ライブコーディング待機中... ギターを弾いてください！(終了は Ctrl+C)")
-    recognizer.run_forever()
+    pipeline.start(settings)
 
-    final_script = generator.get_final_script()
-    output_path = "output_script.py"
+    try:
+        while pipeline.is_running:
+            event = pipeline.get_event_nowait()
+            if event is None:
+                time.sleep(0.05)
+                continue
 
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(final_script)
+            if event.kind == "analysis":
+                if event.rms_dbfs is not None and event.peak_dbfs is not None:
+                    print(
+                        f"[Debug] 音量: RMS={event.rms_dbfs:.1f} dBFS / Peak={event.peak_dbfs:.1f} dBFS",
+                        flush=True,
+                    )
+                if event.chord_name and event.chord_name != "None":
+                    print(f"🎵 ギターのコード: {event.chord_name}", flush=True)
+                continue
+
+            if event.kind == "error":
+                print(f"[Error] {event.message}", flush=True)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        pipeline.stop()
+
+    output_path = pipeline.save_script()
 
     print("\n✅ ギタープログラミング終了！")
     print(f"✅ 生成されたスクリプトを `{output_path}` に保存しました。")

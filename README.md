@@ -66,11 +66,107 @@ uv run python onset_live_basic_pitch.py
 uv run python onset_live_basic_code.py
 ```
 
+## GUIエディターでライブ変換する
+
+`guitar_editor_gui.py` は以下を1画面で操作できます。
+
+- 開始/停止ボタンでギター取り込みを制御
+- コード名のライブ表示
+- 生成コードのエディター表示
+- `output_script.py` への保存
+- GUI上で生成したプログラムの実行
+- 入出力デバイス選択と感度パラメータ編集
+- リアルタイム解析中の `wav/csv/mid` は保存しない
+
+```bash
+uv run python guitar_editor_gui.py
+```
+
+### GUIの運用ルール
+
+- 設定値の変更は停止中に行い、再度「開始」を押して反映します。
+- 入力デバイスが認識されない場合は「デバイス再読込」を実行してください。
+- 保存先は初期設定で `output_script.py` です。
+
 ## 既存CSVからコード判定だけ実行する
 
 ```bash
 uv run python detection_code.py outputs/xxx_basic_pitch.csv
 ```
+
+## ギターエフェクタ実験（ディストーション）
+
+プロジェクト本体とは分離した実験用スクリプトとして、
+`experiments/distortion_realtime_experiment.py` を追加しています。
+
+### ライブラリ選定
+
+- 採用: `sounddevice` + `numpy`
+  - 既存依存だけで実装できる（追加インストール不要）
+  - 低レイテンシでリアルタイム処理しやすい
+  - コールバック内で `tanh` ベースの soft clipping を実装可能
+
+- 見送り（将来候補）: `pedalboard`
+  - 実装容易だが、現時点では依存追加と検証コストが増えるため未採用
+
+### 1) デバイス一覧の確認
+
+```bash
+uv run python experiments/distortion_realtime_experiment.py --list-devices
+```
+
+### 2) リアルタイムでディストーション実験
+
+```bash
+uv run python experiments/distortion_realtime_experiment.py \
+	--drive 2.0 \
+	--input-gain 1.5 \
+	--output-level 0.7 \
+	--dry-wet 1.0
+```
+
+起動すると GUI が開き、実行中に以下を自由に変更できます。
+
+- `drive`
+- `input_gain`
+- `output_level`
+- `dry_wet`
+- `hard_clip_limit`
+
+GUIの `Input Device` / `Output Device` で入出力デバイスを選択し、`開始` を押すと
+エフェクタを通った音がリアルタイムで出力されます。
+
+デフォルトでは入力は `UR22C` を優先して選択し、見つからない場合は利用可能な入力を自動選択します。
+CLIで事前指定したい場合は `--input-device` / `--output-device` を使えます。
+
+```bash
+uv run python experiments/distortion_realtime_experiment.py --input-device UR22C --output-device 3
+```
+
+GUIを使わずCLIだけで実行する場合:
+
+```bash
+uv run python experiments/distortion_realtime_experiment.py --no-gui
+```
+
+### 3) 30秒だけ動かしてWAV保存
+
+```bash
+uv run python experiments/distortion_realtime_experiment.py \
+	--duration-sec 30 \
+	--save-wav outputs/distortion_experiment.wav
+```
+
+### 主なパラメータ
+
+- `--drive`: 歪み量（大きいほど歪む）
+- `--input-gain`: 歪み前の入力ゲイン
+- `--output-level`: 出力音量（過大時は自動で抑制）
+- `--dry-wet`: 原音と歪み音のミックス比率（0.0〜1.0）
+- `--hard-clip-limit`: 最終クリップ上限（0〜1）
+
+実験中はレベルログ（RMS/Peak dBFS）を表示し、クリップ検知時は安全のため
+`output-level` を自動的に下げます。
 
 他プログラムから組み込む場合:
 
