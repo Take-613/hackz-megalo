@@ -19,4 +19,5 @@ dependencies = [
     "pretty-midi>=0.2.11",
     "scipy>=1.17.1",
     "sounddevice>=0.5.5",
+    "ttkbootstrap>=1.14.2",
 ]

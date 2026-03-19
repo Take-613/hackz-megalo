@@ -4,6 +4,7 @@ import queue
 from dataclasses import dataclass, replace
 from pathlib import Path
 from threading import Lock
+from typing import Any
 
 from code_generator import GuitarCodeGenerator
 from detection_code import analyze_chord_from_csv, analyze_chord_from_midi_notes
@@ -45,6 +46,8 @@ class PipelineEvent:
     midi_path: str | None = None
     rms_dbfs: float | None = None
     peak_dbfs: float | None = None
+    next_action_message: str | None = None
+    next_action_choices: list[tuple[str, str]] | None = None
 
 
 class GuitarCodingPipeline:
@@ -137,10 +140,16 @@ class GuitarCodingPipeline:
                 chord_name = analyze_chord_from_midi_notes(result.midi_notes)
 
             snippet: str | None = None
+            next_action_message: str | None = None
+            next_action_choices: list[tuple[str, str]] | None = None
             with self._lock:
                 if chord_name and chord_name != "None":
                     snippet = self._generator.code_mapping.get(chord_name)
                     self._generator.receive_chord(chord_name)
+                    (
+                        next_action_message,
+                        next_action_choices,
+                    ) = self._generator.get_next_action_state()
                 script_text = self._generator.get_final_script()
 
             self._push_event(
@@ -155,6 +164,8 @@ class GuitarCodingPipeline:
                     midi_path=str(result.midi_path) if result.midi_path else None,
                     rms_dbfs=result.rms_dbfs,
                     peak_dbfs=result.peak_dbfs,
+                    next_action_message=next_action_message,
+                    next_action_choices=next_action_choices,
                 )
             )
         except Exception as error:

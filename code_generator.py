@@ -1,5 +1,6 @@
 import os
 import json
+import re
 from pathlib import Path
 
 class GuitarCodeGenerator:
@@ -91,3 +92,43 @@ class GuitarCodeGenerator:
         if self.current_line_str:
             final_lines.append(self.current_line_str)
         return "\n".join(final_lines)
+
+    def get_next_action_state(self) -> tuple[str, list[tuple[str, str]]]:
+        message = self.current_message
+        if not isinstance(self.current_node, dict):
+            return (message, [])
+
+        choices: list[tuple[str, str]] = []
+        for chord_name, next_step in self.current_node.items():
+            if chord_name.startswith("_"):
+                continue
+            label = self._humanize_next_step(next_step)
+            choices.append((chord_name, label))
+        return (message, choices)
+
+    def _humanize_next_step(self, next_step: object) -> str:
+        if isinstance(next_step, dict):
+            nested_message = str(next_step.get("_message", "")).strip()
+            if nested_message:
+                match = re.search(r"\[([^\]]+)\]", nested_message)
+                if match:
+                    return match.group(1)
+                return nested_message
+            return "詳細メニュー"
+
+        if isinstance(next_step, str):
+            command_labels = {
+                "_CMD_NEWLINE": "確定/改行",
+                "_CMD_CLOSE": "閉じる )",
+                "_CMD_DELETE": "1行削除",
+                "_CMD_EXIT": "終了",
+            }
+            if next_step in command_labels:
+                return command_labels[next_step]
+
+            text = next_step.strip()
+            if not text:
+                return "空入力"
+            return text
+
+        return "選択"
