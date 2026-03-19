@@ -48,6 +48,10 @@ class PipelineEvent:
     peak_dbfs: float | None = None
     next_action_message: str | None = None
     next_action_choices: list[tuple[str, str]] | None = None
+    coding_active: bool | None = None
+    cursor_line: int | None = None
+    cursor_col: int | None = None
+    cursor_line_text: str | None = None
 
 
 class GuitarCodingPipeline:
@@ -67,10 +71,15 @@ class GuitarCodingPipeline:
         self._recognizer: AttackStrokeRecognizer | None = None
         self._events: queue.Queue[PipelineEvent] = queue.Queue(maxsize=512)
         self._lock = Lock()
+        self._coding_active = False
 
     @property
     def is_running(self) -> bool:
         return self._recognizer is not None and self._recognizer.is_running
+
+    @property
+    def is_coding_active(self) -> bool:
+        return self._coding_active
 
     def start(self, settings: PipelineSettings) -> None:
         if self.is_running:
@@ -82,7 +91,31 @@ class GuitarCodingPipeline:
         )
         self._recognizer.start()
         self._push_event(
-            PipelineEvent(kind="status", message="取り込みを開始しました。")
+            PipelineEvent(
+                kind="status",
+                message="ギター読み込みを開始しました。",
+                coding_active=self._coding_active,
+            )
+        )
+
+    def start_coding(self) -> None:
+        self._coding_active = True
+        self._push_event(
+            PipelineEvent(
+                kind="status",
+                message="コード入力を開始しました。",
+                coding_active=self._coding_active,
+            )
+        )
+
+    def stop_coding(self) -> None:
+        self._coding_active = False
+        self._push_event(
+            PipelineEvent(
+                kind="status",
+                message="コード入力を停止しました。",
+                coding_active=self._coding_active,
+            )
         )
 
     def stop(self) -> None:
@@ -91,8 +124,13 @@ class GuitarCodingPipeline:
 
         self._recognizer.stop()
         self._recognizer = None
+        self._coding_active = False
         self._push_event(
-            PipelineEvent(kind="status", message="取り込みを停止しました。")
+            PipelineEvent(
+                kind="status",
+                message="取り込みを停止しました。",
+                coding_active=self._coding_active,
+            )
         )
 
     def clear_script(self) -> None:
@@ -142,14 +180,23 @@ class GuitarCodingPipeline:
             snippet: str | None = None
             next_action_message: str | None = None
             next_action_choices: list[tuple[str, str]] | None = None
+            cursor_line: int | None = None
+            cursor_col: int | None = None
+            cursor_line_text: str | None = None
             with self._lock:
-                if chord_name and chord_name != "None":
+                if chord_name and chord_name != "None" and self._coding_active:
                     snippet = self._generator.code_mapping.get(chord_name)
                     self._generator.receive_chord(chord_name)
                     (
                         next_action_message,
                         next_action_choices,
                     ) = self._generator.get_next_action_state()
+
+                (
+                    cursor_line,
+                    cursor_col,
+                    cursor_line_text,
+                ) = self._generator.get_cursor_state()
                 script_text = self._generator.get_final_script()
 
             self._push_event(
@@ -166,6 +213,10 @@ class GuitarCodingPipeline:
                     peak_dbfs=result.peak_dbfs,
                     next_action_message=next_action_message,
                     next_action_choices=next_action_choices,
+                    coding_active=self._coding_active,
+                    cursor_line=cursor_line,
+                    cursor_col=cursor_col,
+                    cursor_line_text=cursor_line_text,
                 )
             )
         except Exception as error:

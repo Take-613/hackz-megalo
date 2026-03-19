@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
+import time
 from pathlib import Path
 from tkinter import messagebox
 from tkinter.scrolledtext import ScrolledText
@@ -113,7 +114,6 @@ CHORD_FINGERINGS: dict[tuple[str, str], tuple[str | int, ...]] = {
     ("B", "Power"): ("x", 2, 4, 4, "x", "x"),
 }
 
-
 class GuitarEditorApp:
     def __init__(self, root: tb.Window) -> None:
         self.root = root
@@ -148,10 +148,33 @@ class GuitarEditorApp:
         self.rms_meter_var = tk.DoubleVar(value=0.0)
         self.peak_meter_var = tk.DoubleVar(value=0.0)
         self._chord_history: list[str] = []
+        self._guitar_action_map: dict[str, str] = {
+            "A 7th": "start",
+            "B 7th": "stop",
+            "C 7th": "run",
+            "D 7th": "save",
+            "E 7th": "clear",
+        }
+        self._guitar_action_labels: dict[str, str] = {
+            "start": "開始",
+            "stop": "停止",
+            "run": "実行",
+            "save": "保存",
+            "clear": "クリア",
+        }
+        self._last_guitar_action_name: str | None = None
+        self._last_guitar_action_time: float = 0.0
+        self._guitar_action_cooldown_sec: float = 1.2
+        self._cursor_line = 1
+        self._cursor_col = 1
+        self._cursor_line_text = ""
 
         self._apply_theme()
         self._build_ui()
+        self.root.after(10, self._apply_default_layout_ratio)
         self._reload_devices()
+        self._start_listening_from_launch()
+        self._show_guitar_command_legend()
         self._set_editor_text(self.pipeline.get_script_text())
 
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
@@ -335,10 +358,12 @@ class GuitarEditorApp:
 
         content = ttk.Panedwindow(outer, orient=tk.HORIZONTAL)
         content.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
+        self.content_pane = content
 
         left_panel = ttk.LabelFrame(content, text="Guitar Input", padding=10)
         center_panel = ttk.Frame(content)
         right_panel = ttk.Panedwindow(content, orient=tk.VERTICAL)
+        self.right_pane = right_panel
         content.add(left_panel, weight=22)
         content.add(center_panel, weight=56)
         content.add(right_panel, weight=22)
@@ -502,6 +527,26 @@ class GuitarEditorApp:
 
         self._update_variables_box()
 
+    def _apply_default_layout_ratio(self) -> None:
+        self.root.update_idletasks()
+
+        total_width = self.content_pane.winfo_width()
+        if total_width > 200:
+            left_width = int(total_width * 0.25)
+            center_width = int(total_width * 0.50)
+            try:
+                self.content_pane.sashpos(0, left_width)
+                self.content_pane.sashpos(1, left_width + center_width)
+            except tk.TclError:
+                pass
+
+        right_height = self.right_pane.winfo_height()
+        if right_height > 120:
+            try:
+                self.right_pane.sashpos(0, int(right_height * 0.52))
+            except tk.TclError:
+                pass
+
     def _reload_devices(self) -> None:
         try:
             devices = sd.query_devices()
@@ -540,45 +585,21 @@ class GuitarEditorApp:
                     break
 
     def _start(self) -> None:
-        if self.pipeline.is_running:
-            return
-
         try:
-            settings = PipelineSettings(
-                input_device=self._input_device_map.get(self.input_device_var.get()),
-                output_device=self._output_device_map.get(self.output_device_var.get()),
-                onset_delta=self._as_float(self.onset_delta_var, "onset_delta"),
-                min_rms_db=self._as_float(self.min_rms_db_var, "min_rms_db"),
-                min_rms_rise_db=self._as_float(
-                    self.min_rms_rise_db_var, "min_rms_rise_db"
-                ),
-                capture_seconds=self._as_float(
-                    self.capture_seconds_var, "capture_seconds"
-                ),
-                min_trigger_interval=self._as_float(
-                    self.min_trigger_interval_var, "min_trigger_interval"
-                ),
-                bp_onset_threshold=self._as_float(
-                    self.bp_onset_threshold_var, "bp_onset_threshold"
-                ),
-                bp_frame_threshold=self._as_float(
-                    self.bp_frame_threshold_var, "bp_frame_threshold"
-                ),
-                bp_minimum_note_length=self._as_float(
-                    self.bp_minimum_note_length_var, "bp_minimum_note_length"
-                ),
-                bp_midi_tempo=self._as_float(self.bp_midi_tempo_var, "bp_midi_tempo"),
-            )
-            self.pipeline.start(settings)
+            if not self.pipeline.is_running:
+                self.pipeline.start(self._build_pipeline_settings())
+
+            self.pipeline.start_coding()
             self.start_button.configure(state=tk.DISABLED)
             self.stop_button.configure(state=tk.NORMAL)
-            self.status_var.set("取り込み中")
+            self.status_var.set("コード入力中")
             self._set_output_next_action(
-                title="取り込み開始",
+                title="コード入力開始",
                 steps=[
-                    "ギターを1回ストロークしてコードを検出してください",
-                    "コードが検出されるとエディタへ自動反映されます",
-                    "必要に応じて保存または実行を押してください",
+                    "ギターを1回ストロークしてコードを入力してください",
+                    "検出コードはエディタへ自動反映されます",
+                    "停止したい場合は B 7th または 停止ボタンを押してください",
+                    "ギター操作: A 7th=開始 / B 7th=停止 / C 7th=実行 / D 7th=保存 / E 7th=クリア",
                 ],
             )
         except Exception as error:
@@ -587,13 +608,20 @@ class GuitarEditorApp:
 
     def _stop(self) -> None:
         try:
-            self.pipeline.stop()
+            self.pipeline.stop_coding()
         except Exception as error:
             messagebox.showerror("停止エラー", str(error))
         finally:
             self.start_button.configure(state=tk.NORMAL)
             self.stop_button.configure(state=tk.DISABLED)
-            self.status_var.set("停止中")
+            self.status_var.set("待機中(読み込み中)")
+            self._set_output_next_action(
+                title="コード入力停止",
+                steps=[
+                    "ギター読み込みは継続中です",
+                    "入力再開は A 7th または 開始ボタンを押してください",
+                ],
+            )
 
     def _save(self) -> None:
         try:
@@ -667,6 +695,13 @@ class GuitarEditorApp:
 
     def _handle_event(self, event: PipelineEvent) -> None:
         if event.kind == "analysis":
+            if event.cursor_line is not None:
+                self._cursor_line = event.cursor_line
+            if event.cursor_col is not None:
+                self._cursor_col = event.cursor_col
+            if event.cursor_line_text is not None:
+                self._cursor_line_text = event.cursor_line_text
+
             self.current_chord_var.set(event.chord_name or "None")
             self.detected_chord_var.set(self._build_chord_formula(event.chord_name))
             if event.rms_dbfs is not None and event.peak_dbfs is not None:
@@ -683,6 +718,35 @@ class GuitarEditorApp:
             if event.chord_name and event.chord_name != "None":
                 self._push_chord_stream(event.chord_name)
             self._update_fretboard(event.chord_name)
+
+            if self._handle_guitar_ui_action(event.chord_name):
+                self._set_stream_snippet(
+                    self._format_message(
+                        kind="status",
+                        raw_message=f"ギター操作を実行しました: {event.chord_name}",
+                    )
+                )
+                self._update_variables_box()
+                return
+
+            if event.coding_active is False:
+                self._set_output_next_action(
+                    title="待機中（読み込み中）",
+                    steps=[
+                        f"検出: {event.chord_name or 'None'}",
+                        "現在は入力停止中です",
+                        "A 7th または 開始ボタンでコード入力を開始してください",
+                    ],
+                )
+                self._set_stream_snippet(
+                    self._format_message(
+                        kind="status",
+                        raw_message="入力停止中のため、コードは反映されていません。",
+                    )
+                )
+                self._update_variables_box()
+                return
+
             if event.next_action_message and event.next_action_choices:
                 self._set_output_next_menu(
                     menu_message=event.next_action_message,
@@ -740,14 +804,95 @@ class GuitarEditorApp:
                 "次の操作を続けてください",
             ],
         )
+
+        if event.coding_active is True:
+            self.start_button.configure(state=tk.DISABLED)
+            self.stop_button.configure(state=tk.NORMAL)
+            self.status_var.set("コード入力中")
+        elif event.coding_active is False:
+            self.start_button.configure(state=tk.NORMAL)
+            self.stop_button.configure(state=tk.DISABLED)
+            if self.pipeline.is_running:
+                self.status_var.set("待機中(読み込み中)")
+            else:
+                self.status_var.set("停止中")
+
         self._set_stream_snippet(
             self._format_message(kind="status", raw_message=event.message)
         )
         self._update_variables_box()
 
+    def _build_pipeline_settings(self) -> PipelineSettings:
+        return PipelineSettings(
+            input_device=self._input_device_map.get(self.input_device_var.get()),
+            output_device=self._output_device_map.get(self.output_device_var.get()),
+            onset_delta=self._as_float(self.onset_delta_var, "onset_delta"),
+            min_rms_db=self._as_float(self.min_rms_db_var, "min_rms_db"),
+            min_rms_rise_db=self._as_float(
+                self.min_rms_rise_db_var, "min_rms_rise_db"
+            ),
+            capture_seconds=self._as_float(
+                self.capture_seconds_var, "capture_seconds"
+            ),
+            min_trigger_interval=self._as_float(
+                self.min_trigger_interval_var, "min_trigger_interval"
+            ),
+            bp_onset_threshold=self._as_float(
+                self.bp_onset_threshold_var, "bp_onset_threshold"
+            ),
+            bp_frame_threshold=self._as_float(
+                self.bp_frame_threshold_var, "bp_frame_threshold"
+            ),
+            bp_minimum_note_length=self._as_float(
+                self.bp_minimum_note_length_var, "bp_minimum_note_length"
+            ),
+            bp_midi_tempo=self._as_float(self.bp_midi_tempo_var, "bp_midi_tempo"),
+        )
+
+    def _start_listening_from_launch(self) -> None:
+        try:
+            if not self.pipeline.is_running:
+                self.pipeline.start(self._build_pipeline_settings())
+            self.start_button.configure(state=tk.NORMAL)
+            self.stop_button.configure(state=tk.DISABLED)
+            self.status_var.set("待機中(読み込み中)")
+        except Exception as error:
+            self.status_var.set("開始失敗")
+            messagebox.showerror("読み込み開始エラー", str(error))
+
+    def _show_guitar_command_legend(self) -> None:
+        self._set_output_next_action(
+            title="ギターコマンド",
+            steps=[
+                "A 7th → 開始",
+                "B 7th → 停止",
+                "C 7th → 実行",
+                "D 7th → 保存",
+                "E 7th → クリア",
+            ],
+        )
+
     def _set_editor_text(self, text: str) -> None:
+        lines = text.split("\n") if text else [""]
+        while len(lines) < self._cursor_line:
+            lines.append("")
+
+        line_index = max(0, self._cursor_line - 1)
+        current_line_text = lines[line_index]
+        cursor_index = max(0, min(len(current_line_text), self._cursor_col - 1))
+        lines[line_index] = (
+            current_line_text[:cursor_index] + "│" + current_line_text[cursor_index:]
+        )
+
+        display_text = "\n".join(lines)
+
+        self.editor.configure(state=tk.NORMAL)
         self.editor.delete("1.0", tk.END)
-        self.editor.insert("1.0", text)
+        self.editor.insert("1.0", display_text)
+        cursor_editor_index = f"{self._cursor_line}.{cursor_index}"
+        self.editor.mark_set("insert", cursor_editor_index)
+        self.editor.see(cursor_editor_index)
+        self.editor.configure(state=tk.DISABLED)
 
     def _set_output_next_action(self, *, title: str, steps: list[str]) -> None:
         formatted = [f"▶ {title}"]
@@ -758,6 +903,47 @@ class GuitarEditorApp:
         self.log.delete("1.0", tk.END)
         self.log.insert("1.0", "\n".join(formatted))
         self.log.configure(state=tk.DISABLED)
+
+    def _handle_guitar_ui_action(self, chord_name: str | None) -> bool:
+        if not chord_name:
+            return False
+
+        action_name = self._guitar_action_map.get(chord_name)
+        if action_name is None:
+            return False
+
+        now = time.monotonic()
+        if (
+            self._last_guitar_action_name == action_name
+            and now - self._last_guitar_action_time < self._guitar_action_cooldown_sec
+        ):
+            return True
+
+        self._last_guitar_action_name = action_name
+        self._last_guitar_action_time = now
+
+        if action_name == "start":
+            self._start()
+        elif action_name == "stop":
+            self._stop()
+        elif action_name == "save":
+            self._save()
+        elif action_name == "run":
+            self._run_script()
+        elif action_name == "clear":
+            self._clear()
+        else:
+            return False
+
+        self._set_output_next_action(
+            title="ギター操作",
+            steps=[
+                f"検出コード: {chord_name}",
+                f"実行アクション: {self._guitar_action_labels.get(action_name, action_name)}",
+                "同じコードを連続検出した場合は短時間デバウンスされます",
+            ],
+        )
+        return True
 
     def _set_output_next_menu(
         self,
@@ -775,7 +961,6 @@ class GuitarEditorApp:
         self.log.delete("1.0", tk.END)
         self.log.insert("1.0", "\n".join(lines))
         self.log.configure(state=tk.DISABLED)
-
     @staticmethod
     def _extract_menu_title(message: str) -> str:
         if "[" in message and "]" in message:
@@ -1063,6 +1248,13 @@ class GuitarEditorApp:
             f"current_chord: {self.current_chord_var.get()}",
             f"{self.level_var.get()}",
             f"{self.paths_var.get()}",
+            "",
+            "[Guitar Commands]",
+            "A 7th → 開始",
+            "B 7th → 停止",
+            "C 7th → 実行",
+            "D 7th → 保存",
+            "E 7th → クリア",
         ]
         self.variables_box.configure(state=tk.NORMAL)
         self.variables_box.delete("1.0", tk.END)

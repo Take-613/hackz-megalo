@@ -93,6 +93,11 @@ class GuitarCodeGenerator:
             final_lines.append(self.current_line_str)
         return "\n".join(final_lines)
 
+    def get_cursor_state(self) -> tuple[int, int, str]:
+        line = len(self.generated_lines) + 1
+        col = len(self.current_line_str) + 1
+        return (line, col, self.current_line_str)
+
     def get_next_action_state(self) -> tuple[str, list[tuple[str, str]]]:
         message = self.current_message
         if not isinstance(self.current_node, dict):
